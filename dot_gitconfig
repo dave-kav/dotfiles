@@ -1,0 +1,103 @@
+[user]
+	email = dave@evervault.com
+	name = Dave Kavanagh
+	signingkey = FCAFCF558839FD5D
+[commit]
+	gpgsign = true
+[push]
+    autoSetupRemote = true
+[pull]
+	rebase = false
+[diff]
+	# colormoved = default
+    tool = difftastic
+[difftool]
+    prompt = false
+[difftool "difftastic"]
+    cmd = difft "$LOCAL" "$REMOTE"
+[pager]
+    difftool = true
+[core]
+	editor = nvim
+	pager = delta
+	attributesfile = /Users/dave/.gitattributes
+[interactive]
+	diffFilter = delta --color-only
+[merge]
+    conflictstyle = diff3
+[help]
+	autocorrect = 20
+[delta]
+    features = side-by-side line-numbers decorations
+    syntax-theme = Dracula
+    plus-style = syntax "#003800"
+    minus-style = syntax "#3f0001"
+[delta "decorations"]
+    commit-decoration-style = bold yellow box ul
+    file-style = bold yellow ul
+    file-decoration-style = none
+    hunk-header-decoration-style = cyan box ul
+[delta "line-numbers"]
+    line-numbers-left-style = cyan
+    line-numbers-right-style = cyan
+    line-numbers-minus-style = 124
+    line-numbers-plus-style = 28
+[alias]
+    dft = difftool
+	aliases = "config --get-regexp alias"
+	frbi = "!f() { git rebase -i $(git log --pretty=oneline --color=always | fzf --ansi | cut -d ' ' -f1)^ ; }; f"
+    fb = "!f() { git branch | fzf --ansi ; }; f"
+	new = !sh -c 'git log $1@{1}..$1@{0} "$@"'
+	branches = "for-each-ref --color=always --sort=-committerdate refs/heads refs/remotes --format='%(authordate:short) %(color:red)%(objectname:short) %(color:yellow)%(refname:short)%(color:reset) (%(color:green)%(committerdate:relative)%(color:reset)) %(authorname)'"
+	bs = branches
+	undo = reset HEAD~1 --mixed
+	rank = shortlog -sn --no-merges
+	searchBranches = ! git branch -a | sed '/->/d' | sed 's/\\*//'| xargs git grep -n -I
+	searchLog = ! git rev-list --all | xargs git grep -n -I
+	filelog = log -u
+	bclean = "!f() { git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs -r git branch -d; }; f"
+	recent = "!f() { git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'; }; f"
+	shit = "!f(){ git reset --hard; git clean -df; if [ -d ".git/rebase-apply" ] || [ -d ".git/rebase-merge" ]; then git rebase --abort; fi; }; f"
+	summary = "!f() { \
+    printf \"Summary of this branch...\n\"; \
+    printf \"%s\n\" $(git rev-parse --abbrev-ref HEAD); \
+    printf \"%s first commit timestamp\n\" $(git log --date-order --format=%cI | tail -1); \
+    printf \"%s last commit timestamp\n\" $(git log -1 --date-order --format=%cI); \
+    printf \"\nSummary of counts...\n\"; \
+    printf \"%d commit count\n\" $(git rev-list --count HEAD); \
+    printf \"%d date count\n\" $(git log --format=oneline --format=\"%ad\" --date=format:\"%Y-%m-%d\" | awk '{a[$0]=1}END{for(i in a){n++;} print n}'); \
+    printf \"%d tag count\n\" $(git tag | wc -l); \
+    printf \"%d author count\n\" $(git log --format=oneline --format=\"%aE\" | awk '{a[$0]=1}END{for(i in a){n++;} print n}'); \
+    printf \"%d committer count\n\" $(git log --format=oneline --format=\"%cE\" | awk '{a[$0]=1}END{for(i in a){n++;} print n}'); \
+    printf \"%d local branch count\n\" $(git branch | grep -v \" -> \" | wc -l); \
+    printf \"%d remote branch count\n\" $(git branch -r | grep -v \" -> \" | wc -l); \
+    printf \"\nSummary of this directory...\n\"; \
+    printf \"%s\n\" $(pwd); \
+    printf \"%d file count via git ls-files\n\" $(git ls-files | wc -l); \
+    printf \"%d file count via find command\n\" $(find . | wc -l); \
+    printf \"%d disk usage\n\" $(du -s | awk '{print $1}'); \
+    printf \"\nMost-active authors, with commit count and %%...\n\"; git log-of-count-and-email | head -7; \
+    printf \"\nMost-active dates, with commit count and %%...\n\"; git log-of-count-and-day | head -7; \
+    printf \"\nMost-active files, with churn count\n\"; git churn | head -7; }; f"
+	churn = "!f() { \
+    git log \
+    --all \
+    --find-copies \
+    --find-renames \
+    --name-only \
+    --format='format:' \
+    \"$@\" | \
+    awk 'NF{a[$0]++}END{for(i in a){print a[i], i}}' | \
+    sort -rn; };f"
+	log-of-count-and-email = "!f() { git log-of-count-and-format \"%aE\" $@; }; f"
+	log-of-count-and-day = "!f() { git log-of-count-and-format-with-date \"%ad\" \"%Y-%m-%d\" $@ ; }; f"
+	log-of-count-and-format = "!f() { format=\"$1\"; shift; git log $@ --format=oneline --format="$format" | awk '{a[$0]++}END{for(i in a){print a[i], int((a[i]/NR)*100) \"%\", i}}' | sort -nr; }; f"
+	log-of-count-and-format-with-date = "!f() { format=\"$1\"; shift; date_format=\"$1\"; shift; git log $@ --format=oneline --format=\"$format\" --date=format:\"$date_format\" | awk '{a[$0]++}END{for(i in a){print a[i], int((a[i]/NR)*100) \"%\", i}}' | sort -nr; }; f"
+  conflicts = diff --name-only --diff-filter=U
+[init]
+	defaultBranch = main
+[gpg]
+	program = gpg
+; [merge "mergiraf"]
+; 	name = mergiraf
+; 	driver = mergiraf merge --git %O %A %B -s %S -x %X -y %Y -p %P
