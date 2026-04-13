@@ -1,0 +1,2 @@
+# Zellij wasm plugins are downloaded by install.sh
+dot_config/zellij/plugins/*.wasm

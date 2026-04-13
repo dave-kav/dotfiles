@@ -1,0 +1,5 @@
+# nvim plugin lock file — machine-specific, changes frequently
+dot_config/nvim/lazy-lock.json
+
+# Zellij wasm plugins — downloaded by install.sh
+dot_config/zellij/plugins/*.wasm
