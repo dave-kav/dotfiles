@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wezterm ls-fonts:*)",
+      "Bash(lua:*)",
+      "Bash(wezterm cli list:*)",
+      "Bash(wezterm show-keys:*)",
+      "Bash(wezterm cli spawn:*)",
+      "Bash(wezterm:*)",
+      "Bash(/bin/ls:*)",
+      "Bash(cat:*)",
+      "Bash(pgrep:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
