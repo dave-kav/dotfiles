@@ -132,6 +132,36 @@ alias awscreds='code ~/.aws/credentials'
 alias ls="eza --icons=always"
 alias la="ls -lAh"
 alias z="zed ."
+
+# Auto-rename the current zellij tab to the git repo name (or dir name)
+_zellij_rename_tab() {
+  [[ -z "$ZELLIJ" ]] && return
+  local name
+  name=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ -n "$name" ]]; then
+    name=$(basename "$name")
+  else
+    name=$(basename "$PWD")
+  fi
+  zellij action rename-tab "$name"
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd _zellij_rename_tab
+_zellij_rename_tab  # run once on shell init to name the tab immediately
+
+# Launch (or reattach to) a named zellij dev session: nvim + claude side by side
+# Usage: dev           → session named after current directory
+#        dev my-name   → session named explicitly
+dev() {
+    local name="${1:-$(basename "$PWD")}"
+    zellij attach --create "$name"
+}
+
+# Fuzzy-pick and attach to an existing zellij session
+alias zj='zellij attach $(zellij list-sessions --no-formatting | fzf | awk "{print \$1}")'
+
+# Fuzzy-pick and delete a zellij session
+alias zjd='zellij delete-session $(zellij list-sessions --no-formatting | fzf | awk "{print \$1}")'
 alias cl="clear"
 alias reset_pr="git reset --hard  origin/$(git branch --show-current)"
 
@@ -275,3 +305,9 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 [[ -f "$HOME/.claude/local/claude" ]] && alias claude="$HOME/.claude/local/claude"
+
+# Auto-start zellij when opening WezTerm outside of an existing session
+# WEZTERM_SKIP_ZELLIJ=1 is set by the project picker so it can run its own zellij command
+if [[ "$TERM_PROGRAM" == "WezTerm" && -z "$ZELLIJ" && -z "$WEZTERM_SKIP_ZELLIJ" ]]; then
+  exec zellij attach --create default
+fi
