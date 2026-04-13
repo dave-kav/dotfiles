@@ -1,0 +1,312 @@
+# format = """
+# $directory\
+# $git_branch\
+# $git_status\
+# $fill\
+# $python\
+# $lua\
+# $nodejs\
+# $golang\
+# $haskell\
+# $rust\
+# $ruby\
+# $aws\
+# $docker_context\
+# $jobs\
+# $cmd_duration\
+# $line_break\
+# $character"""
+
+# add_newline = true
+command_timeout = 3600000
+# palette = "nord"
+
+# [directory]
+# style = 'bold fg:dark_blue'
+# format = '[$path ]($style)'
+# truncation_length = 3
+# truncation_symbol = '…/'
+# truncate_to_repo = false
+
+# [directory.substitutions]
+# 'Documents' = '󰈙'
+# 'Downloads' = ' '
+# 'Music' = ' '
+# 'Pictures' = ' '
+
+# [git_branch]
+# style = 'fg:green'
+# symbol = ' '
+# format = '[on](white) [$symbol$branch ]($style)'
+
+# [git_status]
+# style = 'fg:red'
+# format = '([$all_status$ahead_behind]($style) )'
+
+# [fill]
+# symbol = ' '
+
+# [python]
+# style = 'teal'
+# symbol = ' '
+# format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+# pyenv_version_name = true
+# pyenv_prefix = ''
+
+# [lua]
+# format = '[$symbol($version )]($style)'
+# symbol = ' '
+
+# [nodejs]
+# style = 'blue'
+# symbol = ' '
+
+# [golang]
+# style = 'blue'
+# symbol = ' '
+
+# [haskell]
+# style = 'blue'
+# symbol = ' '
+
+# [rust]
+# style = 'orange'
+# symbol = ' '
+
+# [ruby]
+# style = 'blue'
+# symbol = ' '
+
+# [package]
+# symbol = '󰏗 '
+
+# [aws]
+# symbol = ' '
+# style = 'yellow'
+# format = '[$symbol($profile )(\[$duration\] )]($style)'
+
+# [docker_context]
+# symbol = ' '
+# style = 'fg:#06969A'
+# format = '[$symbol]($style) $path'
+# detect_files = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
+# detect_extensions = ['Dockerfile']
+
+# [jobs]
+# symbol = ' '
+# style = 'red'
+# number_threshold = 1
+# format = '[$symbol]($style)'
+
+# [cmd_duration]
+# min_time = 500
+# style = 'fg:gray'
+# format = '[$duration]($style)'
+
+# [palettes.nord]
+# dark_blue = '#5E81AC'
+# blue = '#81A1C1'
+# teal = '#88C0D0'
+# red = '#BF616A'
+# orange = '#D08770'
+# green = '#A3BE8C'
+# yellow = '#EBCB8B'
+# purple = '#B48EAD'
+# gray = '#434C5E'
+# black = '#2E3440'
+# white = '#D8DEE9'
+
+# [palettes.onedark]
+# dark_blue = '#61afef'
+# blue = '#56b6c2'
+# red = '#e06c75'
+# green = '#98c379'
+# purple = '#c678dd'
+# cyan = '#56b6c2'
+# orange = '#be5046'
+# yellow = '#e5c07b'
+# gray = '#828997'
+# white = '#abb2bf'
+# black = '#2c323c'
+
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[╭](fg:current_line)\
+$os\
+$status\
+$directory\
+$git_branch\
+$git_status\
+$fill\
+$aws\
+$golang\
+$nodejs\
+$bun\
+$deno\
+$python\
+$java\
+$zig\
+$rust\
+$c\
+$cmd_duration\
+$line_break\
+$character\
+"""
+
+palette = 'tokyo_night_storm'
+# palette = 'catppuccin_mocha'
+# palette = 'tokyo_night'
+add_newline = true
+
+[palettes.catppuccin_mocha]
+foreground = '#D9E0EE'
+background = '#1E1E2E'
+current_line = '#2E2E3E'
+primary = '#313244'
+box = '#2E2E3E'
+blue = '#8AADF4'
+cyan = '#76E3F6'
+green = '#A6E3A1'
+orange = '#F9AF74'
+pink = '#F5BDE6'
+purple = '#CBA6F7'
+red = '#F38BA8'
+yellow = '#F9E2AF'
+status = "#e23140"
+
+[palettes.tokyo_night_storm]
+foreground = '#C0CAF5'
+background = '#24283B'
+current_line = '#2F3549'
+primary = '#364A82'
+box = '#2F3549'
+blue = '#7AA2F7'
+cyan = '#7DCFFF'
+green = '#9ECE6A'
+orange = '#FF9E64'
+pink = '#BB9AF7'
+purple = '#BB9AF7'
+red = '#F7768E'
+yellow = '#E0AF68'
+status = '#F7768E'
+
+[palettes.tokyo_night]
+foreground = '#D8D8D8'
+background = '#1A1B26'
+current_line = '#2A2C37'
+primary = '#292E42'
+box = '#2A2C37'
+blue = '#7AA2F7'
+cyan = '#7FDBCA'
+green = '#98C379'
+orange = '#FF9E64'
+pink = '#FF75A0'
+purple = '#BB80B3'
+red = '#F7768E'
+yellow = '#E5C07B'
+status = "#e23140"
+
+[os]
+format = '(fg:current_line)[](fg:red)[](fg:primary bg:red)[](fg:red)'
+disabled = true
+
+[status]
+format = "[─](fg:current_line)[](fg:status)[](fg:primary bg:status)[](fg:status bg:box)[ $status](fg:foreground bg:box)[](fg:box)"
+pipestatus = true
+pipestatus_separator = "-"
+pipestatus_segment_format = "$status"
+pipestatus_format = "[─](fg:current_line)[](fg:status)[](fg:primary bg:status)[](fg:status bg:box)[ $pipestatus](fg:foreground bg:box)[](fg:box)"
+disabled = false
+
+[directory]
+format = '[─](fg:current_line)[](fg:blue)[󰷏](fg:primary bg:blue)[](fg:blue bg:box)[ $read_only$truncation_symbol$path](fg:foreground bg:box)[](fg:box)'
+home_symbol = " ~/"
+truncation_symbol = ' '
+truncation_length = 2
+read_only = '󱧵 '
+read_only_style = ''
+
+[git_branch]
+format = '[─](fg:current_line)[](fg:green)[$symbol](fg:primary bg:green)[](fg:green bg:box)[ $branch](fg:foreground bg:box)'
+symbol = ''
+
+[git_status]
+conflicted = "⚔️ "
+ahead = "🏎️ 💨 ×${count} "
+behind = "🐢 ×${count} "
+diverged = "🔱 🏎️ 💨 ×${ahead_count} 🐢 ×${behind_count} "
+untracked = "🛤️  ×${count} "
+stashed = "📦 "
+modified = "📝 ×${count} "
+staged = "🗃️  ×${count} "
+renamed = "📛 ×${count} "
+deleted = "🗑️  ×${count} "
+style = "bright-white"
+format = "$all_status$ahead_behind"
+
+[nodejs]
+format = '[─](fg:current_line)[](fg:green)[$symbol](fg:primary bg:green)[](fg:green bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = '󰎙 Node.js'
+
+[bun]
+format = '[─](fg:current_line)[](fg:green)[$symbol](fg:primary bg:green)[](fg:green bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = ' Bun'
+
+[deno]
+format = '[─](fg:current_line)[](fg:purple)[$symbol](fg:primary bg:purple)[](fg:purple bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = '🦕 Deno'
+
+[zig]
+format = '[─](fg:current_line)[](fg:blue)[$symbol](fg:primary bg:blue)[](fg:blue bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = '⚡️ Zig'
+
+[rust]
+format = '[─](fg:current_line)[](fg:yellow)[$symbol](fg:primary bg:yellow)[](fg:yellow bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = ' Rust'
+
+[python]
+format = '[─](fg:current_line)[](fg:green)[$symbol](fg:primary bg:green)[](fg:green bg:box)[ (${version} )(\($virtualenv\) )](fg:foreground bg:box)[](fg:box)'
+symbol = ' python'
+
+[java]
+format = '[─](fg:current_line)[](fg:red)[$symbol](fg:primary bg:red)[](fg:red bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = ' Java'
+
+[golang]
+format = '[─](fg:current_line)[](fg:red)[$symbol](fg:primary bg:red)[](fg:red bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = '󰑮 Go'
+
+[c]
+format = '[─](fg:current_line)[](fg:blue)[$symbol](fg:primary bg:blue)[](fg:blue bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = ' C'
+
+[terraform]
+format = '[─](fg:current_line)[](fg:purple)[$symbol](fg:primary bg:purple)[](fg:purple bg:box)[ $version](fg:foreground bg:box)[](fg:box)'
+symbol = ' Terraform'
+
+[fill]
+symbol = '─'
+style = 'fg:current_line'
+
+[cmd_duration]
+min_time = 500
+format = '[─](fg:current_line)[](fg:orange)[](fg:primary bg:orange)[](fg:orange bg:box)[ $duration](fg:foreground bg:box)[](fg:box)'
+
+[time]
+format = '[─](fg:current_line)[](fg:purple)[󰦖](fg:primary bg:purple)[](fg:purple bg:box)[ $time](fg:foreground bg:box)[](fg:box)'
+time_format = '%H:%M'
+disabled = false
+
+[username]
+format = '[─](fg:current_line)[](fg:yellow)[](fg:primary bg:yellow)[](fg:yellow bg:box)[ $user](fg:foreground bg:box)[](fg:box) '
+show_always = true
+
+[character]
+format = """
+[╰─$symbol](fg:current_line) """
+success_symbol = '[](fg:bold white)'
+error_symbol = '[×](fg:bold red)'
+
+[profiles]
+transient = """$character"""
