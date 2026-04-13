@@ -305,9 +305,3 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 [[ -f "$HOME/.claude/local/claude" ]] && alias claude="$HOME/.claude/local/claude"
-
-# Auto-start zellij when opening WezTerm outside of an existing session
-# WEZTERM_SKIP_ZELLIJ=1 is set by the project picker so it can run its own zellij command
-if [[ "$TERM_PROGRAM" == "WezTerm" && -z "$ZELLIJ" && -z "$WEZTERM_SKIP_ZELLIJ" ]]; then
-  exec zellij attach --create default
-fi

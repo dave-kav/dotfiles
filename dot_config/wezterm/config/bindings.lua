@@ -80,8 +80,15 @@ local keys = {
     { key = 'v',          mods = mod.SUPER,     action = act.PasteFrom 'PrimarySelection' },
 
     -- window --
-    -- window: spawn windows
-    { key = 'n',          mods = mod.SUPER,     action = act.SpawnWindow },
+    -- window: spawn new window and immediately show project picker
+    {
+        key = 'n',
+        mods = mod.SUPER,
+        action = wezterm.action_callback(function(_window, _pane)
+            local _, new_pane, new_win = wezterm.mux.spawn_window({})
+            new_win:gui_window():perform_action(projects.choose_project(), new_pane)
+        end),
+    },
 
     -- window: zoom window
     {

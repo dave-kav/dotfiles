@@ -1,8 +1,16 @@
+local wezterm = require('wezterm')
 local Config = require('config')
+local projects = require('utils.projects')
 
 require('utils.backdrops')
     :set_images()
     :random()
+
+-- Fire the project picker in the initial window on startup
+wezterm.on('gui-startup', function(cmd)
+    local tab, pane, window = wezterm.mux.spawn_window(cmd or {})
+    window:gui_window():perform_action(projects.choose_project(), pane)
+end)
 
 require('events.workspace-backdrop').setup()
 require('events.left-status').setup()
