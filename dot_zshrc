@@ -140,15 +140,11 @@ alias reset_pr="git reset --hard  origin/$(git branch --show-current)"
 
 [ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh
 
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+[[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
+  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 export EDITOR=nvim
 
-# Fig post block. Keep at the bottom of this file.
-[[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && builtin source "$HOME/.fig/shell/zshrc.post.zsh"
-
-# bun completions
-[ -s "/Users/davekavanagh/.bun/_bun" ] && source "/Users/davekavanagh/.bun/_bun"
 
 # PATH Configuration
 # Add local bin directories
@@ -263,7 +259,18 @@ eval "$(starship init zsh)"
 
 eval "$(savvy init zsh)"
 
-source /Users/dave/bin/functions.sh
+# ap: switch AWS profile (tab-completion)
+if [[ -n ${ZSH_VERSION-} ]] && command -v aws &>/dev/null; then
+    autoload -U +X compinit && compinit
+    _ap() {
+        local AWS_CONFIG="${HOME}/.aws/config"
+        if (( CURRENT == 1 )) && [ -f "${AWS_CONFIG}" ]; then
+            local profiles=($(aws configure list-profiles 2>/dev/null | grep -v default))
+            _arguments "1: :(${profiles})" "--help[Show help message]"
+        fi
+    }
+    compdef _ap ap
+fi
 
 # tabtab source for packages
 # uninstall by removing these lines
@@ -272,4 +279,4 @@ export PATH="$HOME/.local/bin:$PATH"
 
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
 
-alias claude="/Users/dave/.claude/local/claude"
+[[ -f "$HOME/.claude/local/claude" ]] && alias claude="$HOME/.claude/local/claude"
