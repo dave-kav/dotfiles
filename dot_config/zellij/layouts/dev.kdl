@@ -1,0 +1,53 @@
+// Dev layout: nvim (left, 2/3) + terminal (right, 1/3)
+// Launch with: zellij --layout dev
+// Or from WezTerm: Cmd+D in any tab
+layout {
+    default_tab_template {
+        children
+        // Minimal bar: invisible in locked mode (blends with terminal bg), shows mode badge otherwise
+        pane size=1 borderless=true {
+            plugin location="file:~/.config/zellij/plugins/zjstatus.wasm" {
+                format_left   "{mode}"
+                format_center "{tabs}"
+                format_right  "{pipe_zjstatus_hints}"
+                pipe_zjstatus_hints_format "#[fg=#a9b1d6]{output}"
+                // #24283b matches WezTerm + Tokyo Night Storm terminal background
+                format_space  "#[bg=#24283b]"
+
+                // Locked = invisible (in nvim, lualine handles status)
+                mode_locked        "#[bg=#24283b,fg=#24283b] "
+                // All other modes show a prominent badge
+                mode_normal        "#[bg=#9ece6a,fg=#1f2335,bold] NORMAL "
+                mode_pane          "#[bg=#7aa2f7,fg=#1f2335,bold] PANE "
+                mode_tab           "#[bg=#e0af68,fg=#1f2335,bold] TAB "
+                mode_scroll        "#[bg=#7dcfff,fg=#1f2335,bold] SCROLL "
+                mode_session       "#[bg=#bb9af7,fg=#1f2335,bold] SESSION "
+                mode_move          "#[bg=#ff9e64,fg=#1f2335,bold] MOVE "
+                mode_resize        "#[bg=#ff9e64,fg=#1f2335,bold] RESIZE "
+                mode_rename_tab    "#[bg=#e0af68,fg=#1f2335,bold] RENAME "
+                mode_rename_pane   "#[bg=#7aa2f7,fg=#1f2335,bold] RENAME "
+                mode_search        "#[bg=#7dcfff,fg=#1f2335,bold] SEARCH "
+                mode_enter_search  "#[bg=#7dcfff,fg=#1f2335,bold] SEARCH "
+                mode_prompt        "#[bg=#7dcfff,fg=#1f2335,bold] PROMPT "
+
+                tab_normal    "#[fg=#3b4261,bg=#24283b] {name} "
+                tab_active    "#[fg=#565f89,bg=#24283b] {name} "
+                tab_separator ""
+            }
+        }
+    }
+
+    tab name="dev" focus=true {
+        pane split_direction="vertical" {
+            pane size="67%" focus=true {
+                command "nvim"
+            }
+            pane split_direction="horizontal" size="33%" {
+                pane size="50%" {
+                    command "claude"
+                }
+                pane size="50%"
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+// Plain terminal layout (used for new tabs and non-project sessions)
+layout {
+    default_tab_template {
+        children
+        pane size=1 borderless=true {
+            plugin location="file:~/.config/zellij/plugins/zjstatus.wasm" {
+                format_left   "{mode}#[fg=#7aa2f7,bold] {session} "
+                format_center "{tabs}"
+                format_right  "{pipe_zjstatus_hints}  {command_git_branch}{command_git_dirty}#[fg=#565f89,italic] {datetime}"
+                pipe_zjstatus_hints_format "#[fg=#a9b1d6]{output}"
+                format_space  "#[bg=#1f2335]"
+
+                mode_normal        "#[bg=#9ece6a,fg=#1f2335,bold] NORMAL "
+                mode_locked        "#[bg=#f7768e,fg=#1f2335,bold] LOCKED "
+                mode_pane          "#[bg=#7aa2f7,fg=#1f2335,bold] PANE "
+                mode_tab           "#[bg=#e0af68,fg=#1f2335,bold] TAB "
+                mode_scroll        "#[bg=#7dcfff,fg=#1f2335,bold] SCROLL "
+                mode_session       "#[bg=#bb9af7,fg=#1f2335,bold] SESSION "
+                mode_move          "#[bg=#ff9e64,fg=#1f2335,bold] MOVE "
+                mode_resize        "#[bg=#ff9e64,fg=#1f2335,bold] RESIZE "
+                mode_rename_tab    "#[bg=#e0af68,fg=#1f2335,bold] RENAME "
+                mode_rename_pane   "#[bg=#7aa2f7,fg=#1f2335,bold] RENAME "
+                mode_search        "#[bg=#7dcfff,fg=#1f2335,bold] SEARCH "
+                mode_enter_search  "#[bg=#7dcfff,fg=#1f2335,bold] SEARCH "
+                mode_prompt        "#[bg=#7dcfff,fg=#1f2335,bold] PROMPT "
+
+                tab_normal    "#[fg=#565f89] {name} "
+                tab_active    "#[fg=#7aa2f7,bold] {name} "
+                tab_separator "#[fg=#3b4261]│"
+
+                command_git_branch_command    "git rev-parse --abbrev-ref HEAD"
+                command_git_branch_format     "#[fg=#9ece6a] {stdout} "
+                command_git_branch_interval   "10"
+                command_git_branch_rendermode "static"
+
+                command_git_dirty_command     "git status --short 2>/dev/null | grep -q . && echo '✦' || echo ''"
+                command_git_dirty_format      "#[fg=#e0af68]{stdout}"
+                command_git_dirty_interval    "10"
+                command_git_dirty_rendermode  "static"
+
+                datetime        "#[fg=#565f89,italic]{format} "
+                datetime_format "%H:%M"
+            }
+        }
+    }
+
+    tab {
+        pane
+    }
+}
