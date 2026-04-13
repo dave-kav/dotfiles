@@ -37,8 +37,10 @@ local function project_dirs()
     return projects
 end
 
+local NEW_SESSION = '  New session…'
+
 M.choose_project = function()
-    local choices = {}
+    local choices = { { label = NEW_SESSION, id = '__new__' } }
     for _, value in ipairs(project_dirs()) do
         table.insert(choices, { label = value })
     end
@@ -49,6 +51,27 @@ M.choose_project = function()
         fuzzy = true,
         action = wezterm.action_callback(function(child_window, child_pane, id, label)
             if not label then
+                return
+            end
+
+            -- "New session…" — prompt for a name then create it
+            if id == '__new__' then
+                child_window:perform_action(wezterm.action.PromptInputLine {
+                    description = 'Session name:',
+                    action = wezterm.action_callback(function(w, p, name)
+                        if not name or name == '' then return end
+                        local cmd = 'zellij attach ' .. name
+                            .. ' 2>/dev/null || zellij -s ' .. name .. ' -n dev'
+                        w:perform_action(wezterm.action.SwitchToWorkspace {
+                            name = name,
+                            spawn = {
+                                args = { '/bin/zsh', '-l', '-c', cmd },
+                                set_environment_variables = { WEZTERM_SKIP_ZELLIJ = '1' },
+                            },
+                        }, p)
+                        set_workspace_backdrop(w, name)
+                    end),
+                }, child_pane)
                 return
             end
 
