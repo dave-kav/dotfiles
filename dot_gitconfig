@@ -1,7 +1,7 @@
 [user]
 	email = dave@evervault.com
 	name = Dave Kavanagh
-	signingkey = FCAFCF558839FD5D
+	signingkey = 9F21127EA36DD888
 [commit]
 	gpgsign = true
 [push]
