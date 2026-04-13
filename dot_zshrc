@@ -150,7 +150,6 @@ export EDITOR=nvim
 # Add local bin directories
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.savvy/bin:$PATH"
 
 # Development tools
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home
@@ -257,8 +256,6 @@ fi
 
 eval "$(starship init zsh)"
 
-eval "$(savvy init zsh)"
-
 # ap: switch AWS profile (tab-completion)
 if [[ -n ${ZSH_VERSION-} ]] && command -v aws &>/dev/null; then
     autoload -U +X compinit && compinit
@@ -276,7 +273,5 @@ fi
 # uninstall by removing these lines
 [[ -f ~/.config/tabtab/__tabtab.zsh ]] && . ~/.config/tabtab/__tabtab.zsh || true
 export PATH="$HOME/.local/bin:$PATH"
-
-[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
 
 [[ -f "$HOME/.claude/local/claude" ]] && alias claude="$HOME/.claude/local/claude"
