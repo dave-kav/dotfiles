@@ -96,10 +96,7 @@ keybind = page_down=scroll_page_down
 keybind = alt+shift+up=jump_to_prompt:-1
 keybind = alt+shift+down=jump_to_prompt:1
 
-# Font size
-keybind = super+plus=increase_font_size
-keybind = super+minus=decrease_font_size
-keybind = super+zero=reset_font_size
+# Font size — rely on Ghostty defaults (Cmd+= / Cmd+- / Cmd+0)
 
 # Misc
 keybind = super+k=clear_screen
