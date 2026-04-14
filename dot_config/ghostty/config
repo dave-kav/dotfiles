@@ -66,10 +66,10 @@ keybind = alt+right=text:\x1bf
 # Tabs
 keybind = super+t=new_tab
 keybind = super+ctrl+w=close_tab
-keybind = super+bracketleft=previous_tab
-keybind = super+bracketright=next_tab
-keybind = super+ctrl+bracketleft=move_tab:-1
-keybind = super+ctrl+bracketright=move_tab:+1
+keybind = super+[=previous_tab
+keybind = super+]=next_tab
+keybind = super+ctrl+[=move_tab:-1
+keybind = super+ctrl+]=move_tab:1
 
 # Window
 keybind = super+n=new_window
@@ -87,8 +87,8 @@ keybind = super+ctrl+h=goto_split:left
 keybind = super+ctrl+l=goto_split:right
 
 # Scrolling
-keybind = super+u=scroll_line_up:5
-keybind = super+d=scroll_line_down:5
+keybind = super+u=scroll_line_up
+keybind = super+d=scroll_line_down
 keybind = page_up=scroll_page_up
 keybind = page_down=scroll_page_down
 
@@ -97,9 +97,9 @@ keybind = alt+shift+up=jump_to_prompt:-1
 keybind = alt+shift+down=jump_to_prompt:1
 
 # Font size
-keybind = super+equal=increase_font_size
-keybind = super+minus=decrease_font_size
-keybind = super+zero=reset_font_size
+keybind = super+==increase_font_size
+keybind = super+-=decrease_font_size
+keybind = super+0=reset_font_size
 
 # Misc
 keybind = super+k=clear_screen
