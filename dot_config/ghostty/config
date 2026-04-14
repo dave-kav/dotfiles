@@ -51,3 +51,60 @@ window-padding-y = 10,8
 confirm-close-surface = false
 macos-option-as-alt = true
 scrollback-limit = 99999
+
+# ── Keybindings ───────────────────────────────────────────────────────────────
+# Mirrors WezTerm bindings as closely as Ghostty allows.
+# WezTerm-specific features (project picker, workspace toggle, backdrop cycling,
+# zellij-aware splits) have no Ghostty equivalent and are omitted.
+
+# Cursor movement
+keybind = super+left=text:\x1bOH
+keybind = super+right=text:\x1bOF
+keybind = alt+left=text:\x1bb
+keybind = alt+right=text:\x1bf
+
+# Tabs
+keybind = super+t=new_tab
+keybind = super+ctrl+w=close_tab
+keybind = super+bracketleft=previous_tab
+keybind = super+bracketright=next_tab
+keybind = super+ctrl+bracketleft=move_tab:-1
+keybind = super+ctrl+bracketright=move_tab:+1
+
+# Window
+keybind = super+n=new_window
+
+# Splits (no zellij awareness — use zellij keybinds when inside zellij)
+keybind = super+backslash=new_split:down
+keybind = super+ctrl+backslash=new_split:right
+keybind = super+enter=toggle_split_zoom
+keybind = super+w=close_surface
+
+# Pane navigation (Cmd+Ctrl+hjkl)
+keybind = super+ctrl+k=goto_split:up
+keybind = super+ctrl+j=goto_split:down
+keybind = super+ctrl+h=goto_split:left
+keybind = super+ctrl+l=goto_split:right
+
+# Scrolling
+keybind = super+u=scroll_line_up:5
+keybind = super+d=scroll_line_down:5
+keybind = page_up=scroll_page_up
+keybind = page_down=scroll_page_down
+
+# Semantic prompt navigation (requires OSC 133 shell integration)
+keybind = alt+shift+up=jump_to_prompt:-1
+keybind = alt+shift+down=jump_to_prompt:1
+
+# Font size
+keybind = super+equal=increase_font_size
+keybind = super+minus=decrease_font_size
+keybind = super+zero=reset_font_size
+
+# Misc
+keybind = super+k=clear_screen
+keybind = super+f=toggle_fullscreen
+keybind = ctrl+shift+f=toggle_fullscreen
+keybind = f11=toggle_fullscreen
+keybind = super+v=paste_from_clipboard
+keybind = super+c=copy_to_clipboard
