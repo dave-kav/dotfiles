@@ -87,8 +87,8 @@ keybind = super+ctrl+h=goto_split:left
 keybind = super+ctrl+l=goto_split:right
 
 # Scrolling
-keybind = super+u=scroll_line_up
-keybind = super+d=scroll_line_down
+keybind = super+u=scroll_page_fractional:-0.1
+keybind = super+d=scroll_page_fractional:0.1
 keybind = page_up=scroll_page_up
 keybind = page_down=scroll_page_down
 
@@ -97,9 +97,9 @@ keybind = alt+shift+up=jump_to_prompt:-1
 keybind = alt+shift+down=jump_to_prompt:1
 
 # Font size
-keybind = super+==increase_font_size
-keybind = super+-=decrease_font_size
-keybind = super+0=reset_font_size
+keybind = super+plus=increase_font_size
+keybind = super+minus=decrease_font_size
+keybind = super+zero=reset_font_size
 
 # Misc
 keybind = super+k=clear_screen
