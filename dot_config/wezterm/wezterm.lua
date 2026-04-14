@@ -1,6 +1,7 @@
 local wezterm = require('wezterm')
 local Config = require('config')
 local projects = require('utils.projects')
+local workspace_history = require('utils.workspace-history')
 
 require('utils.backdrops')
     :set_images()
@@ -12,6 +13,7 @@ wezterm.on('gui-startup', function(cmd)
     window:gui_window():perform_action(projects.choose_project(), pane)
 end)
 
+workspace_history.setup()
 require('events.workspace-backdrop').setup()
 require('events.left-status').setup()
 require('events.right-status').setup({ date_format = '%a %H:%M:%S' })

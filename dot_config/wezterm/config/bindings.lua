@@ -2,6 +2,7 @@ local wezterm = require('wezterm')
 local platform = require('utils.platform')
 local backdrops = require('utils.backdrops')
 local projects = require('utils.projects')
+local workspace_history = require('utils.workspace-history')
 local act = wezterm.action
 
 local mod = {}
@@ -285,6 +286,18 @@ local keys = {
         end),
     },
 
+    -- workspace: toggle back to previous workspace
+    {
+        key = '`',
+        mods = mod.SUPER,
+        action = wezterm.action_callback(function(window, pane)
+            local prev = workspace_history.previous
+            if prev then
+                window:perform_action(act.SwitchToWorkspace { name = prev }, pane)
+            end
+        end),
+    },
+
     -- projects --
     {
         key = 'p',
@@ -294,7 +307,7 @@ local keys = {
         end),
     },
     {
-        key = 'f',
+        key = 'j',
         mods = mod.SUPER_REV,
         action = wezterm.action_callback(function(window, pane)
             window:perform_action(projects.choose_session(), pane)
