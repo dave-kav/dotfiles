@@ -39,7 +39,7 @@ layout {
 
     tab name="dev" focus=true {
         pane split_direction="vertical" {
-            pane size="67%" focus=true {
+            pane size="67%" focus=false {
                 command "nvim"
             }
             pane split_direction="horizontal" size="33%" {

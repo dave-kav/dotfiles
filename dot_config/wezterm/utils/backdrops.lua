@@ -77,7 +77,11 @@ function BackDrops:_create_opts()
    return {
       {
          source = { File = self.images[self.current_idx] },
+         width = '100%',
+         height = '100%',
          horizontal_align = 'Center',
+         vertical_align = 'Middle',
+         resize_mode = 'Crop',
       },
       {
          source = { Color = colors.background },

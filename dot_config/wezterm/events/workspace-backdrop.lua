@@ -1,5 +1,5 @@
 local wezterm = require('wezterm')
-local backdrops = require('utils.backdrops')
+local projects = require('utils.projects')
 
 local M = {}
 
@@ -16,17 +16,7 @@ M.setup = function()
         end
         last_workspace[win_id] = workspace
 
-        if #backdrops.images == 0 then
-            return
-        end
-
-        -- Deterministically pick a backdrop index from the workspace name
-        local hash = 0
-        for i = 1, #workspace do
-            hash = hash + string.byte(workspace, i) * i
-        end
-        local idx = (hash % #backdrops.images) + 1
-        backdrops:set_img(window, idx)
+        projects.set_workspace_backdrop(window, workspace)
     end)
 end
 

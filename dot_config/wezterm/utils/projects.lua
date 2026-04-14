@@ -2,16 +2,34 @@ local wezterm = require("wezterm")
 local backdrops = require("utils.backdrops")
 local M = {}
 
-local function set_workspace_backdrop(window, name)
+-- Per-workspace backdrop index — stored in wezterm.GLOBAL so it survives config reloads
+local function _wb()
+	if not wezterm.GLOBAL.workspace_backdrops then
+		wezterm.GLOBAL.workspace_backdrops = {}
+	end
+	return wezterm.GLOBAL.workspace_backdrops
+end
+
+M.save_backdrop = function(name, idx)
+	_wb()[name] = idx
+end
+
+M.set_workspace_backdrop = function(window, name)
 	if #backdrops.images == 0 then
 		return
 	end
-	local hash = 0
-	for i = 1, #name do
-		hash = hash + string.byte(name, i) * i
+	local idx = _wb()[name]
+	if not idx then
+		local hash = 0
+		for i = 1, #name do
+			hash = hash + string.byte(name, i) * i
+		end
+		idx = (hash % #backdrops.images) + 1
 	end
-	backdrops:set_img(window, (hash % #backdrops.images) + 1)
+	_wb()[name] = idx
+	backdrops:set_img(window, idx)
 end
+local set_workspace_backdrop = M.set_workspace_backdrop
 
 local project_dir = wezterm.home_dir .. "/code"
 

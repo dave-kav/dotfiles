@@ -125,16 +125,39 @@ return {
     opts = {},
   },
 
+  { "nvim-neo-tree/neo-tree.nvim", enabled = false },
+
+  -- Snacks file explorer as neo-tree replacement
   {
-    "nvim-neo-tree/neo-tree.nvim",
+    "folke/snacks.nvim",
+    priority = 1000,
+    lazy = false,
     opts = {
-      window = { width = 45 },
-      filesystem = {
-        follow_current_file = {
-          enabled = true,       -- reveal and focus the active file in the tree
-          leave_dirs_open = true, -- keep parent dirs expanded when switching files
-        },
+      explorer = { enabled = true },
+      icons    = { enabled = true },
+    },
+    keys = {
+      {
+        "<leader>e",
+        function()
+          local explorer_win = nil
+          for _, win in ipairs(vim.api.nvim_list_wins()) do
+            if vim.bo[vim.api.nvim_win_get_buf(win)].filetype == "snacks_explorer" then
+              explorer_win = win
+              break
+            end
+          end
+          if not explorer_win then
+            Snacks.explorer()
+          elseif vim.api.nvim_get_current_win() == explorer_win then
+            vim.cmd("wincmd p")
+          else
+            vim.api.nvim_set_current_win(explorer_win)
+          end
+        end,
+        desc = "Explorer (flip focus)",
       },
+      { "<leader>E", function() Snacks.explorer() end, desc = "Explorer (toggle open/close)" },
     },
   },
 

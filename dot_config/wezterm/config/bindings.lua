@@ -125,6 +125,7 @@ local keys = {
         mods = mod.SUPER,
         action = wezterm.action_callback(function(window, _pane)
             backdrops:random(window)
+            projects.save_backdrop(window:active_workspace(), backdrops.current_idx)
         end),
     },
     {
@@ -132,6 +133,7 @@ local keys = {
         mods = mod.SUPER,
         action = wezterm.action_callback(function(window, _pane)
             backdrops:cycle_back(window)
+            projects.save_backdrop(window:active_workspace(), backdrops.current_idx)
         end),
     },
     {
@@ -139,6 +141,7 @@ local keys = {
         mods = mod.SUPER,
         action = wezterm.action_callback(function(window, _pane)
             backdrops:cycle_forward(window)
+            projects.save_backdrop(window:active_workspace(), backdrops.current_idx)
         end),
     },
     {
@@ -153,8 +156,10 @@ local keys = {
                 if not idx then
                     return
                 end
+                local i = tonumber(idx)
                 ---@diagnostic disable-next-line: param-type-mismatch
-                backdrops:set_img(window, tonumber(idx))
+                backdrops:set_img(window, i)
+                projects.save_backdrop(window:active_workspace(), i)
             end),
         }),
     },
@@ -297,9 +302,11 @@ local keys = {
                 local ok, gui_win = pcall(function() return w:gui_window() end)
                 if ok and gui_win and gui_win:active_workspace() == prev then
                     gui_win:focus()
+                    projects.set_workspace_backdrop(gui_win, prev)
                     return
                 end
             end
+            projects.set_workspace_backdrop(window, prev)
             window:perform_action(act.SwitchToWorkspace { name = prev }, pane)
         end),
     },

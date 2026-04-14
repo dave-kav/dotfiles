@@ -163,7 +163,7 @@ alias zj='zellij attach $(zellij list-sessions --no-formatting | fzf | awk "{pri
 # Fuzzy-pick and delete a zellij session
 alias zjd='zellij delete-session $(zellij list-sessions --no-formatting | fzf | awk "{print \$1}")'
 alias cl="clear"
-alias reset_pr="git reset --hard  origin/$(git branch --show-current)"
+alias reset_pr='git reset --hard origin/$(git branch --show-current)'
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
