@@ -129,6 +129,12 @@ return {
     "nvim-neo-tree/neo-tree.nvim",
     opts = {
       window = { width = 45 },
+      filesystem = {
+        follow_current_file = {
+          enabled = true,       -- reveal and focus the active file in the tree
+          leave_dirs_open = true, -- keep parent dirs expanded when switching files
+        },
+      },
     },
   },
 
