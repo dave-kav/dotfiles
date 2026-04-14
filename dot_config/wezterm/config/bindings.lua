@@ -288,8 +288,8 @@ local keys = {
 
     -- workspace: toggle back to previous workspace
     {
-        key = '`',
-        mods = mod.SUPER,
+        key = ';',
+        mods = mod.SUPER_REV,
         action = wezterm.action_callback(function(window, _pane)
             local prev = workspace_history.previous
             if not prev then return end
