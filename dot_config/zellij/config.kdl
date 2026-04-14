@@ -359,7 +359,8 @@ themes {
 //   - true (default, enabled)
 //   - false
 // 
-pane_frames false
+pane_frames true
+rounded_corners true
  
 // When attaching to an existing session with other users,
 // should the session be mirrored (true)
