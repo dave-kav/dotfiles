@@ -290,10 +290,14 @@ local keys = {
     {
         key = '`',
         mods = mod.SUPER,
-        action = wezterm.action_callback(function(window, pane)
+        action = wezterm.action_callback(function(window, _pane)
             local prev = workspace_history.previous
-            if prev then
-                window:perform_action(act.SwitchToWorkspace { name = prev }, pane)
+            if not prev then return end
+            for _, w in ipairs(wezterm.mux.all_windows()) do
+                if w:active_workspace() == prev then
+                    w:gui_window():focus()
+                    return
+                end
             end
         end),
     },
