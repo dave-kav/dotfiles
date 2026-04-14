@@ -585,8 +585,4 @@ plugins {
 
 load_plugins {
     zjstatus-hints
-    "file:~/.config/zellij/plugins/zellij-attention.wasm" {
-        waiting_icon "⏳"
-        completed_icon "✅"
-    }
 }
