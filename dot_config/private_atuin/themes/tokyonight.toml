@@ -1,0 +1,12 @@
+[theme]
+name = "tokyonight"
+parent = "default"
+
+[colors]
+Base       = "lightsteelblue"
+Important  = "cornflowerblue"
+Annotation = "goldenrod"
+Guidance   = "dimgray"
+AlertInfo  = "lightskyblue"
+AlertWarn  = "goldenrod"
+AlertError = "lightcoral"

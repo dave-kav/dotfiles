@@ -325,7 +325,7 @@ themes {
         bg "#24283b"
         black "#1d202f"
         red "#f7768e"
-        green "#9ece6a"
+        green "#7aa2f7"
         yellow "#e0af68"
         blue "#7aa2f7"
         magenta "#bb9af7"
@@ -385,7 +385,7 @@ pane_frames true
 // Valid values: positive integers
 // Default value: 10000
 // 
-// scroll_buffer_size 10000
+scroll_buffer_size 99999
  
 // Provide a command to execute when copying text. The text will be piped to
 // the stdin of the program to perform the copy. This can be used with
@@ -455,7 +455,7 @@ serialize_pane_viewport true
 // defaults to the scrollback size. If this number is higher than the scrollback size, it will
 // also default to the scrollback size. This does nothing if `serialize_pane_viewport` is not true.
 // 
-scrollback_lines_to_serialize 10000
+scrollback_lines_to_serialize 99999
  
 // Enable or disable the rendering of styled and colored underlines (undercurl).
 // May need to be disabled for certain unsupported terminals

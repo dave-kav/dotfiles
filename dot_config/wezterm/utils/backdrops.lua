@@ -81,7 +81,6 @@ function BackDrops:_create_opts()
          height = '100%',
          horizontal_align = 'Center',
          vertical_align = 'Middle',
-         resize_mode = 'Crop',
       },
       {
          source = { Color = colors.background },

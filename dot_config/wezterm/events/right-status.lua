@@ -70,9 +70,15 @@ cells
    :add_segment('battery_icon', '', colors.battery)
    :add_segment('battery_text', '', colors.battery, attr(attr.intensity('Bold')))
 
+-- Cache battery info — only refresh every 2 seconds
+local battery_cache = { charge = '', icon = '', last_update = 0 }
+
 ---@return string, string
 local function battery_info()
-   -- ref: https://wezfurlong.org/wezterm/config/lua/wezterm/battery_info.html
+   local now = os.time()
+   if now - battery_cache.last_update < 2 then
+      return battery_cache.charge, battery_cache.icon
+   end
 
    local charge = ''
    local icon = ''
@@ -88,7 +94,11 @@ local function battery_info()
       end
    end
 
-   return charge, icon .. ' '
+   battery_cache.charge = charge
+   battery_cache.icon = icon .. ' '
+   battery_cache.last_update = now
+
+   return battery_cache.charge, battery_cache.icon
 end
 
 ---@param opts? Event.RightStatusOptions Default: {date_format = '%a %H:%M:%S'}

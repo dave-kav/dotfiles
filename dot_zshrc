@@ -285,6 +285,8 @@ if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
 fi
 
 eval "$(starship init zsh)"
+eval "$(atuin init zsh)"
+eval "$(direnv hook zsh)"
 
 # ap: switch AWS profile (tab-completion)
 if [[ -n ${ZSH_VERSION-} ]] && command -v aws &>/dev/null; then
@@ -305,3 +307,5 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 [[ -f "$HOME/.claude/local/claude" ]] && alias claude="$HOME/.claude/local/claude"
+
+. "$HOME/.local/bin/env"

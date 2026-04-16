@@ -1,2 +1,6 @@
 # Zellij wasm plugins are downloaded by install.sh
 dot_config/zellij/plugins/*.wasm
+
+# Atuin themes are copied (not symlinked) by run_copy-atuin-themes.sh
+# because atuin can't read theme files through symlinks
+dot_config/private_atuin/themes

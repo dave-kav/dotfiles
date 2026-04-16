@@ -105,10 +105,12 @@ M.choose_project = function()
 			-- Get the project name from the path
 			local project_name = label:match("([^/]+)$")
 
-			-- Attach to existing zellij session (no layout change) or create new one with dev layout
-			-- NOTE: `zellij --session name --layout layout` adds to existing session only.
-			--       To create a NEW named session with a layout, use: zellij -s name -n layout
-			local cmd = "zellij attach " .. project_name .. " 2>/dev/null || zellij -s " .. project_name .. " -n dev"
+			-- Use shell-level exact match to avoid zellij's fuzzy attach
+			-- e.g. "whatnot_backend" must not attach to "whatnot_backend_for_claude"
+			local cmd = "zellij list-sessions --no-formatting 2>/dev/null"
+				.. " | grep -qx '" .. project_name .. "'"
+				.. " && zellij attach '" .. project_name .. "'"
+				.. " || zellij -s '" .. project_name .. "' -n dev"
 			local spawn = {
 				cwd = label,
 				args = { "/bin/zsh", "-l", "-c", cmd },
