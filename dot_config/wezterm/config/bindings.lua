@@ -244,7 +244,6 @@ local keys = {
 
     -- panes: scroll pane
     { key = 'u',        mods = mod.SUPER, action = act.ScrollByLine(-5) },
-    { key = 'd',        mods = mod.SUPER, action = act.ScrollByLine(5) },
     { key = 'PageUp',   mods = 'NONE',    action = act.ScrollByPage(-0.75) },
     { key = 'PageDown', mods = 'NONE',    action = act.ScrollByPage(0.75) },
 
@@ -274,22 +273,6 @@ local keys = {
         }),
     },
 
-    -- dev layout: zellij with nvim (2/3) + claude (1/3) in current dir
-    {
-        key = 'd',
-        mods = mod.SUPER,
-        action = wezterm.action_callback(function(window, pane)
-            local cwd_uri = pane:get_current_working_dir()
-            local dir = cwd_uri and cwd_uri.file_path or wezterm.home_dir
-            window:perform_action(
-                act.SpawnCommandInNewTab({
-                    args = { '/bin/zsh', '-l', '-c', 'zellij --layout dev' },
-                    cwd = dir,
-                }),
-                pane
-            )
-        end),
-    },
 
     -- workspace: toggle back to previous workspace
     {

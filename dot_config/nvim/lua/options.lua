@@ -34,4 +34,3 @@ opt.fileencoding = "utf-8"
 opt.mouse = "a"
 opt.cmdheight = 1
 opt.laststatus = 3 -- global statusline
-opt.winbar = "%{%v:lua.require('dropbar.api').get_winbar()%}" -- dropbar

@@ -107,8 +107,10 @@ M.choose_project = function()
 
 			-- Use shell-level exact match to avoid zellij's fuzzy attach
 			-- e.g. "whatnot_backend" must not attach to "whatnot_backend_for_claude"
+			-- awk extracts just the session name (first field) to handle dead sessions
+			-- which appear as "name [EXITED - 2h ago]" in list output
 			local cmd = "zellij list-sessions --no-formatting 2>/dev/null"
-				.. " | grep -qx '" .. project_name .. "'"
+				.. " | awk '{print $1}' | grep -qx '" .. project_name .. "'"
 				.. " && zellij attach '" .. project_name .. "'"
 				.. " || zellij -s '" .. project_name .. "' -n dev"
 			local spawn = {

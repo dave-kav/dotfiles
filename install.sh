@@ -58,7 +58,7 @@ fi
 # ── 5. Brew bundle ────────────────────────────────────────────────────────────
 
 step "Brew bundle"
-brew bundle --file="${CHEZMOI_SOURCE}/Brewfile" --no-lock
+brew bundle --file="${CHEZMOI_SOURCE}/Brewfile"
 ok "done"
 
 # ── 6. oh-my-zsh ─────────────────────────────────────────────────────────────

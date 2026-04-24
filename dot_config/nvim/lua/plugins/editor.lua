@@ -186,6 +186,55 @@ return {
   },
 
   -- ============================================================
+  -- CSV viewer
+  -- ============================================================
+  {
+    "hat0uma/csvview.nvim",
+    ft = { "csv", "tsv" },
+    keys = {
+      { "<leader>tc", "<cmd>CsvViewToggle<CR>", ft = "csv", desc = "Toggle CSV view" },
+    },
+    opts = {
+      parser = { async = true },
+      view = { display_mode = "border" },
+    },
+  },
+
+  -- ============================================================
+  -- Autosave
+  -- ============================================================
+  {
+    "okuuva/auto-save.nvim",
+    event = { "InsertLeave", "TextChanged" },
+    opts = {
+      enabled = true,
+      trigger_events = {
+        immediate_save = { "BufLeave", "FocusLost" },
+        defer_save = { "InsertLeave", "TextChanged" },
+        cancel_deferred_save = { "InsertEnter" },
+      },
+      debounce_delay = 2000,
+      condition = function(buf)
+        local fn = vim.fn
+        local utils = require("auto-save.utils.data")
+        -- Only save named, modifiable, normal buffers
+        if fn.getbufvar(buf, "&modifiable") == 1
+          and utils.not_in(fn.getbufvar(buf, "&filetype"), {
+            "oil", "neo-tree", "TelescopePrompt", "lazy", "mason",
+            "alpha", "dashboard", "harpoon", "help", "toggleterm",
+          })
+          and fn.bufname(buf) ~= ""
+        then
+          return true
+        end
+        return false
+      end,
+      write_all_buffers = false,
+      noautocmd = false,
+    },
+  },
+
+  -- ============================================================
   -- Undotree
   -- ============================================================
   {
@@ -287,6 +336,7 @@ return {
         { "<leader>O", group = "Octo (GitHub)" },
         { "<leader>r", group = "Refactor/Rename" },
         { "<leader>s", group = "Search/Replace" },
+        { "<leader>t", group = "Toggle" },
         { "<leader>T", group = "Tests" },
         { "<leader>x", group = "Diagnostics/Trouble" },
         { "<leader>d", group = "Diagnostics" },

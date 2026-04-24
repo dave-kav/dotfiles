@@ -228,6 +228,40 @@ return {
       { "<leader>Nb", "<cmd>ObsidianBacklinks<CR>", desc = "Obsidian: backlinks" },
       { "<leader>Nt", "<cmd>ObsidianTags<CR>", desc = "Obsidian: tags" },
       { "<leader>Ng", "<cmd>ObsidianTemplate<CR>", desc = "Obsidian: template" },
+      {
+        "<leader>Nc",
+        function()
+          vim.ui.input({ prompt = "Ticket ID: " }, function(ticket)
+            if not ticket or ticket == "" then return end
+            vim.cmd("ObsidianNew oncall/" .. ticket)
+            vim.schedule(function()
+              vim.cmd("ObsidianTemplate oncall")
+            end)
+          end)
+        end,
+        desc = "Obsidian: new on-call entry",
+      },
+      {
+        "<leader>Nj",
+        function()
+          vim.ui.input({ prompt = "Jira XML path: ", completion = "file" }, function(path)
+            if not path or path == "" then return end
+            path = vim.fn.expand(path)
+            local script = vim.fn.expand("~/notes/scripts/jira_to_oncall.py")
+            local out = vim.fn.system({ "python3", script, path, "--overwrite" })
+            local ok = vim.v.shell_error == 0
+            vim.notify(ok and out:gsub("\n", "") or out, ok and vim.log.levels.INFO or vim.log.levels.ERROR)
+            if ok then
+              -- Extract ticket ID from output ("Written: .../TICKET.md")
+              local ticket = out:match("([A-Z]+-[0-9]+)%.md")
+              if ticket then
+                vim.cmd("e " .. vim.fn.expand("~/notes/oncall/") .. ticket .. ".md")
+              end
+            end
+          end)
+        end,
+        desc = "Obsidian: import Jira XML to on-call",
+      },
     },
     opts = {
       workspaces = {

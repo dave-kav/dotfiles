@@ -6,6 +6,10 @@ return {
     "lewis6991/gitsigns.nvim",
     event = { "BufReadPre", "BufNewFile" },
     opts = {
+      current_line_blame = true,
+      current_line_blame_opts = {
+        delay = 500,
+      },
       signs = {
         add = { text = "▎" },
         change = { text = "▎" },
@@ -54,6 +58,22 @@ return {
         -- Text object
         map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "Select hunk")
       end,
+    },
+  },
+
+  -- ============================================================
+  -- Blame (full gutter blame column)
+  -- ============================================================
+  {
+    "FabijanZulj/blame.nvim",
+    cmd = { "BlameToggle" },
+    keys = {
+      { "<leader>tB", "<cmd>BlameToggle<CR>", desc = "Toggle gutter blame" },
+    },
+    opts = {
+      date_format = "%Y-%m-%d",
+      merge_consecutive = true,
+      commit_detail_view = "split",
     },
   },
 
