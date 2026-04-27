@@ -1,0 +1,7 @@
+// Single Claude Code pane — opened via Cmd+T from WezTerm.
+// Uses zsh login shell so PATH and aliases (claude) are available.
+layout {
+    pane command="/bin/zsh" {
+        args "-l" "-c" "claude; exec zsh -l"
+    }
+}

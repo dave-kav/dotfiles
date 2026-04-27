@@ -41,28 +41,89 @@ local keys = {
         end),
     },
 
-    {
-        key = 'k',
-        mods = 'CMD',
-        action = wezterm.action_callback(function(window, pane)
-            local proc = pane:get_foreground_process_name() or ''
-            if proc:find('zellij') then
-                -- In zellij: send Ctrl+L so it passes through to the focused inner pane
-                window:perform_action(act.SendKey { key = 'l', mods = 'CTRL' }, pane)
-            else
-                window:perform_action(act.ClearScrollback 'ScrollbackAndViewport', pane)
-            end
-        end),
-    },
+    { key = 'k', mods = 'CMD', action = act.SendKey { key = 'l', mods = 'CTRL' } },
     -- cursor movement --
     { key = 'LeftArrow',  mods = mod.SUPER,     action = act.SendString '\u{1b}OH' },
     { key = 'RightArrow', mods = mod.SUPER,     action = act.SendString '\u{1b}OF' },
     { key = 'LeftArrow',  mods = 'OPT',         action = act.SendString '\u{1b}b' }, -- Move back one word
     { key = 'RightArrow', mods = 'OPT',         action = act.SendString '\u{1b}f' }, -- Move forward one word
 
-    -- tabs: spawn+close
-    { key = 't',          mods = mod.SUPER,     action = act.SpawnTab('DefaultDomain') },
-    { key = 't',          mods = mod.SUPER_REV, action = act.SpawnTab({ DomainName = 'WSL:Ubuntu' }) },
+    -- Cmd+T: new Claude session in a Zellij session (persists after WezTerm closes).
+    -- Zellij auto-names the session; reattach orphaned sessions via `zj`.
+    {
+        key = 't',
+        mods = mod.SUPER,
+        action = wezterm.action_callback(function(window, pane)
+            local cwd_uri = pane:get_current_working_dir()
+            local cwd = (cwd_uri and cwd_uri.file_path) or wezterm.home_dir
+            local layout = wezterm.home_dir .. '/.config/zellij/layouts/claude.kdl'
+            window:perform_action(
+                act.SpawnCommandInNewTab {
+                    cwd = cwd,
+                    args = { '/bin/zsh', '-l', '-c', 'zellij -l "' .. layout .. '"' },
+                },
+                pane
+            )
+        end),
+    },
+    -- Cmd+Ctrl+E: fuzzy picker for all WezTerm tabs running Claude.
+    -- Works from anywhere (WezTerm handles it before Zellij/nvim/Claude see it).
+    {
+        key = 'e',
+        mods = mod.SUPER_REV,
+        action = wezterm.action_callback(function(window, pane)
+            local tabs = window:mux_window():tabs()
+            local choices = {}
+            local tab_by_id = {}
+
+            for _, tab in ipairs(tabs) do
+                local ap = tab:active_pane()
+                local proc = ap:get_foreground_process_name() or ''
+                local title = ap:get_title() or ''
+                wezterm.log_info('Claude picker: proc=' .. proc .. ' title=' .. title)
+                -- Claude Code always sets terminal title starting with ✳
+                local is_claude = proc:find('claude', 1, true)
+                    or title:find('\xe2\x9c\xb3', 1, true)
+                if is_claude then
+                    local cwd_uri = ap:get_current_working_dir()
+                    local cwd = (cwd_uri and cwd_uri.file_path) or ''
+                    local home = wezterm.home_dir
+                    local cwd_display
+                    if cwd:sub(1, #home) == home then
+                        cwd_display = '~' .. cwd:sub(#home + 1)
+                    else
+                        cwd_display = cwd ~= '' and cwd or '?'
+                    end
+                    -- Extract session name from title ("✳ session_name"), skip generic "Claude Code"
+                    local session_name = title:match('^%S+%s+(.+)$') or ''
+                    if session_name == 'Claude Code' then session_name = '' end
+                    local label = session_name ~= '' and (session_name .. '  ' .. cwd_display) or cwd_display
+                    local id = tostring(tab:tab_id())
+                    wezterm.log_info('Claude picker: adding id=' .. id .. ' label=' .. label)
+                    table.insert(choices, { label = ' claude  ' .. label, id = id })
+                    tab_by_id[id] = tab
+                end
+            end
+
+            if #choices == 0 then
+                table.insert(choices, { label = '(no Claude sessions open — use Cmd+T to start one)', id = '' })
+            end
+
+            window:perform_action(
+                act.InputSelector {
+                    action = wezterm.action_callback(function(w, _, id, _)
+                        if id and tab_by_id[id] then
+                            tab_by_id[id]:activate()
+                        end
+                    end),
+                    title = 'Claude Sessions',
+                    choices = choices,
+                    fuzzy = true,
+                },
+                pane
+            )
+        end),
+    },
     { key = 'w',          mods = mod.SUPER_REV, action = act.CloseCurrentTab({ confirm = false }) },
 
     -- tabs: navigation

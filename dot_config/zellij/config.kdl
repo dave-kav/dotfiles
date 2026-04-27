@@ -6,6 +6,17 @@ keybinds clear-defaults=true {
         bind "Alt j" { MoveFocus "down"; }
         bind "Alt k" { MoveFocus "up"; }
         bind "Alt m" { ToggleFocusFullscreen; }
+        bind "Alt [" { GoToPreviousTab; }
+        bind "Alt ]" { GoToNextTab; }
+        bind "Alt 1" { GoToTab 1; }
+        bind "Alt 2" { GoToTab 2; }
+        bind "Alt 3" { GoToTab 3; }
+        bind "Alt 4" { GoToTab 4; }
+        bind "Alt 5" { GoToTab 5; }
+        bind "Alt 6" { GoToTab 6; }
+        bind "Alt 7" { GoToTab 7; }
+        bind "Alt 8" { GoToTab 8; }
+        bind "Alt 9" { GoToTab 9; }
         bind "Ctrl /" {
             LaunchOrFocusPlugin "configuration" {
                 floating true
@@ -569,8 +580,10 @@ plugins {
         pipe_name         "zjstatus_hints"
         hide_in_base_mode true
     }
+    zellij-attention location="file:~/.config/zellij/plugins/zellij-attention.wasm"
 }
 
 load_plugins {
     zjstatus-hints
+    zellij-attention
 }
