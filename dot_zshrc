@@ -136,6 +136,7 @@ alias z="zed ."
 # Auto-rename the current zellij tab to the git repo name (or dir name)
 _zellij_rename_tab() {
   [[ -z "$ZELLIJ" ]] && return
+  [[ -n "$ZELLIJ_CLAUDE_TAB" ]] && return
   local name
   name=$(git rev-parse --show-toplevel 2>/dev/null)
   if [[ -n "$name" ]]; then
@@ -162,6 +163,17 @@ alias zj='zellij attach $(zellij list-sessions --no-formatting | fzf | awk "{pri
 
 # Fuzzy-pick and delete a zellij session
 alias zjd='zellij delete-session $(zellij list-sessions --no-formatting | fzf | awk "{print \$1}")'
+
+# Auto-start Claude when inside a claude- prefixed Zellij session (opened via Cmd+T).
+# A marker file prevents re-running if the user opens additional panes in the same session.
+if [[ -n "$ZELLIJ_SESSION_NAME" && "$ZELLIJ_SESSION_NAME" == claude-* ]]; then
+    _marker="/tmp/.claude-autostart-${ZELLIJ_SESSION_NAME}"
+    if [[ ! -f "$_marker" ]]; then
+        touch "$_marker"
+        claude
+    fi
+    unset _marker
+fi
 alias cl="clear"
 alias reset_pr='git reset --hard origin/$(git branch --show-current)'
 

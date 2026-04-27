@@ -48,87 +48,165 @@ local keys = {
     { key = 'LeftArrow',  mods = 'OPT',         action = act.SendString '\u{1b}b' }, -- Move back one word
     { key = 'RightArrow', mods = 'OPT',         action = act.SendString '\u{1b}f' }, -- Move forward one word
 
-    -- Cmd+T: new Claude session in a Zellij session (persists after WezTerm closes).
-    -- Zellij auto-names the session; reattach orphaned sessions via `zj`.
+    -- Cmd+T: new Claude session.
+    -- Inside Zellij: creates a Zellij tab (persists, no new WezTerm workspace).
+    -- Outside Zellij: falls back to a WezTerm tab with a named Zellij session.
     {
         key = 't',
         mods = mod.SUPER,
         action = wezterm.action_callback(function(window, pane)
             local cwd_uri = pane:get_current_working_dir()
             local cwd = (cwd_uri and cwd_uri.file_path) or wezterm.home_dir
+            local dir = (cwd:match('[^/]+$') or 'claude'):gsub('[^%w%-]', '_')
+            local ts = tostring(os.time()):sub(-6)
             local layout = wezterm.home_dir .. '/.config/zellij/layouts/claude.kdl'
-            window:perform_action(
-                act.SpawnCommandInNewTab {
-                    cwd = cwd,
-                    args = { '/bin/zsh', '-l', '-c', 'zellij -l "' .. layout .. '"' },
-                },
-                pane
-            )
+            local proc = pane:get_foreground_process_name() or ''
+            if proc:find('zellij', 1, true) then
+                local session = window:active_workspace()
+                local tab_name = 'claude-' .. dir .. '-' .. ts
+                wezterm.run_child_process { '/bin/zsh', '-l', '-c',
+                    'ZELLIJ_SESSION_NAME="' .. session .. '"'
+                    .. ' zellij action new-tab'
+                    .. ' --layout "' .. layout .. '"'
+                    .. ' --name "' .. tab_name .. '"'
+                    .. ' --cwd "' .. cwd .. '"'
+                }
+            else
+                local session = 'claude-' .. dir .. '-' .. ts
+                window:perform_action(
+                    act.SpawnCommandInNewTab {
+                        cwd = cwd,
+                        args = { '/bin/zsh', '-l', '-c', 'zellij attach --create "' .. session .. '"' },
+                    },
+                    pane
+                )
+            end
         end),
     },
-    -- Cmd+Ctrl+E: fuzzy picker for all WezTerm tabs running Claude.
-    -- Works from anywhere (WezTerm handles it before Zellij/nvim/Claude see it).
+    -- Cmd+Ctrl+E: fuzzy picker for Claude sessions.
+    -- Inside Zellij: lists claude-* tabs via query-tab-names; navigates with go-to-tab-name.
+    -- Outside Zellij: lists WezTerm tabs by ✳ title prefix; activates via wezterm cli.
     {
         key = 'e',
         mods = mod.SUPER_REV,
         action = wezterm.action_callback(function(window, pane)
-            local tabs = window:mux_window():tabs()
-            local choices = {}
-            local tab_by_id = {}
+            local proc = pane:get_foreground_process_name() or ''
+            local in_zellij = proc:find('zellij', 1, true) ~= nil
+            local session = window:active_workspace()
+            local lines = {}
+            local fzf_base = 'fzf'
+                .. ' --with-nth 2..'
+                .. ' --border rounded'
+                .. ' --border-label "  Claude Sessions  "'
+                .. ' --layout reverse'
+                .. ' --prompt "  session › "'
+                .. ' --pointer "›"'
+                .. ' --no-info'
+                .. ' --padding 1,2'
+                .. ' --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
 
-            for _, tab in ipairs(tabs) do
-                local ap = tab:active_pane()
-                local proc = ap:get_foreground_process_name() or ''
-                local title = ap:get_title() or ''
-                wezterm.log_info('Claude picker: proc=' .. proc .. ' title=' .. title)
-                -- Claude Code always sets terminal title starting with ✳
-                local is_claude = proc:find('claude', 1, true)
-                    or title:find('\xe2\x9c\xb3', 1, true)
-                if is_claude then
-                    local cwd_uri = ap:get_current_working_dir()
-                    local cwd = (cwd_uri and cwd_uri.file_path) or ''
-                    local home = wezterm.home_dir
-                    local cwd_display
-                    if cwd:sub(1, #home) == home then
-                        cwd_display = '~' .. cwd:sub(#home + 1)
-                    else
-                        cwd_display = cwd ~= '' and cwd or '?'
+            if in_zellij then
+                -- Query claude-* tabs from the current Zellij session
+                local handle = io.popen(
+                    '/bin/zsh -l -c \'ZELLIJ_SESSION_NAME="' .. session
+                    .. '" zellij action query-tab-names 2>/dev/null\''
+                )
+                if handle then
+                    for name in handle:lines() do
+                        if name:match('^claude%-') then
+                            -- Strip "claude-" prefix and trailing -NNNNNN timestamp for display
+                            local label = name:gsub('^claude%-', ''):gsub('%-%d+$', '')
+                            table.insert(lines, name .. ' ' .. label)
+                        end
                     end
-                    -- Extract session name from title ("✳ session_name"), skip generic "Claude Code"
-                    local session_name = title:match('^%S+%s+(.+)$') or ''
-                    if session_name == 'Claude Code' then session_name = '' end
-                    local label = session_name ~= '' and (session_name .. '  ' .. cwd_display) or cwd_display
-                    local id = tostring(tab:tab_id())
-                    wezterm.log_info('Claude picker: adding id=' .. id .. ' label=' .. label)
-                    table.insert(choices, { label = ' claude  ' .. label, id = id })
-                    tab_by_id[id] = tab
+                    handle:close()
+                end
+            else
+                -- Scan WezTerm tabs for Claude processes (✳ title prefix = Claude Code)
+                for _, tab in ipairs(window:mux_window():tabs()) do
+                    local ap = tab:active_pane()
+                    local title = ap:get_title() or ''
+                    local is_claude = (ap:get_foreground_process_name() or ''):find('claude', 1, true)
+                        or title:find('\xe2\x9c\xb3', 1, true)
+                    if is_claude then
+                        local cwd_uri = ap:get_current_working_dir()
+                        local cwd = (cwd_uri and cwd_uri.file_path) or ''
+                        local home = wezterm.home_dir
+                        local cwd_display = cwd:sub(1, #home) == home and ('~' .. cwd:sub(#home + 1)) or (cwd ~= '' and cwd or '?')
+                        local sname = title:match('^%S+%s+(.+)$') or ''
+                        if sname == 'Claude Code' then sname = '' end
+                        local label = sname ~= '' and (sname .. '  ' .. cwd_display) or cwd_display
+                        table.insert(lines, tostring(tab:tab_id()) .. ' ' .. label)
+                    end
                 end
             end
 
-            if #choices == 0 then
-                table.insert(choices, { label = '(no Claude sessions open — use Cmd+T to start one)', id = '' })
+            local tmpfile = '/tmp/wezterm-claude-picker'
+            local f = io.open(tmpfile, 'w')
+            if f then
+                f:write(#lines > 0 and table.concat(lines, '\n') .. '\n'
+                    or '(no Claude sessions — use Cmd+T to start one)\n')
+                f:close()
             end
 
-            window:perform_action(
-                act.InputSelector {
-                    action = wezterm.action_callback(function(w, _, id, _)
-                        if id and tab_by_id[id] then
-                            tab_by_id[id]:activate()
-                        end
-                    end),
-                    title = 'Claude Sessions',
-                    choices = choices,
-                    fuzzy = true,
-                },
-                pane
-            )
+            local cmd, spawn_env
+            if in_zellij then
+                cmd = fzf_base .. ' < ' .. tmpfile
+                    .. " | awk '{print $1}'"
+                    .. ' | { read tab && [ -n "$tab" ]'
+                    .. ' && ZELLIJ_SESSION_NAME="' .. session .. '" zellij action go-to-tab-name "$tab"; }'
+                    .. '; exit 0'
+                spawn_env = {}
+            else
+                cmd = fzf_base .. ' < ' .. tmpfile
+                    .. " | awk '{print $1}'"
+                    .. " | grep -E '^[0-9]+$'"
+                    .. ' | xargs -I{} wezterm cli activate-tab --tab-id {}'
+                    .. '; exit 0'
+                spawn_env = { WEZTERM_PANE = tostring(pane:pane_id()) }
+            end
+
+            local _, _, new_win = wezterm.mux.spawn_window({
+                args = { '/bin/zsh', '-l', '-c', cmd },
+                set_environment_variables = spawn_env,
+            })
+            if new_win then
+                local ok, gui_win = pcall(function() return new_win:gui_window() end)
+                if ok and gui_win then
+                    gui_win:set_inner_size(750, 300)
+                end
+            end
         end),
     },
     { key = 'w',          mods = mod.SUPER_REV, action = act.CloseCurrentTab({ confirm = false }) },
 
     -- tabs: navigation
-    { key = '[',          mods = mod.SUPER,     action = act.ActivateTabRelative(-1) },
-    { key = ']',          mods = mod.SUPER,     action = act.ActivateTabRelative(1) },
+    -- Inside Zellij: delegate to Zellij tab navigation (Alt+[/]) so claude-* tabs are accessible.
+    -- Outside Zellij: WezTerm tab navigation.
+    {
+        key = '[',
+        mods = mod.SUPER,
+        action = wezterm.action_callback(function(window, pane)
+            local proc = pane:get_foreground_process_name() or ''
+            if proc:find('zellij', 1, true) then
+                window:perform_action(act.SendKey { key = '[', mods = 'ALT' }, pane)
+            else
+                window:perform_action(act.ActivateTabRelative(-1), pane)
+            end
+        end),
+    },
+    {
+        key = ']',
+        mods = mod.SUPER,
+        action = wezterm.action_callback(function(window, pane)
+            local proc = pane:get_foreground_process_name() or ''
+            if proc:find('zellij', 1, true) then
+                window:perform_action(act.SendKey { key = ']', mods = 'ALT' }, pane)
+            else
+                window:perform_action(act.ActivateTabRelative(1), pane)
+            end
+        end),
+    },
     { key = '[',          mods = mod.SUPER_REV, action = act.MoveTabRelative(-1) },
     { key = ']',          mods = mod.SUPER_REV, action = act.MoveTabRelative(1) },
 
@@ -142,13 +220,12 @@ local keys = {
     { key = 'v',          mods = mod.SUPER,     action = act.PasteFrom 'PrimarySelection' },
 
     -- window --
-    -- window: spawn new window and immediately show project picker
+    -- window: spawn new window with fzf project picker
     {
         key = 'n',
         mods = mod.SUPER,
-        action = wezterm.action_callback(function(_window, _pane)
-            local _, new_pane, new_win = wezterm.mux.spawn_window({})
-            new_win:gui_window():perform_action(projects.choose_project(), new_pane)
+        action = wezterm.action_callback(function(window, pane)
+            window:perform_action(projects.choose_project({ new_window = true }), pane)
         end),
     },
 

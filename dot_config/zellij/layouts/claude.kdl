@@ -2,6 +2,6 @@
 // Uses zsh login shell so PATH and aliases (claude) are available.
 layout {
     pane command="/bin/zsh" {
-        args "-l" "-c" "claude; exec zsh -l"
+        args "-l" "-c" "export ZELLIJ_CLAUDE_TAB=1; claude; ZELLIJ_CLAUDE_TAB=1 exec zsh -l"
     }
 }
