@@ -381,4 +381,69 @@ M.choose_session = function()
 	end)
 end
 
+-- choose_tab(): fzf picker over Zellij tabs in the current session.
+-- ctrl-d closes the tab and removes its git worktree (if any).
+M.choose_tab = function()
+	return wezterm.action_callback(function(window, pane)
+		local proc = pane:get_foreground_process_name() or ""
+		local in_zellij = proc:find("zellij", 1, true) ~= nil
+		local session = window:active_workspace()
+		local lines = {}
+
+		if in_zellij then
+			local handle = io.popen(
+				'/bin/zsh -l -c \'ZELLIJ_SESSION_NAME="' .. session
+				.. '" zellij action query-tab-names 2>/dev/null\''
+			)
+			if handle then
+				for name in handle:lines() do
+					if name ~= "" then table.insert(lines, name) end
+				end
+				handle:close()
+			end
+		else
+			for _, tab in ipairs(window:mux_window():tabs()) do
+				local ap = tab:active_pane()
+				table.insert(lines, ap:get_title() or tostring(tab:tab_id()))
+			end
+		end
+
+		local tmpfile = "/tmp/wezterm-tab-picker"
+		local f = io.open(tmpfile, "w")
+		if f then
+			f:write(#lines > 0 and table.concat(lines, "\n") .. "\n"
+				or "(no tabs — use Cmd+T to start one)\n")
+			f:close()
+		end
+
+		local cmd
+		if in_zellij then
+			local zs = 'ZELLIJ_SESSION_NAME="' .. session .. '"'
+			cmd = fzf.cmd({ label = "Tabs", prompt = "tab", expect = "ctrl-d", header = "ctrl-d: close tab + remove worktree" })
+				.. " < " .. tmpfile
+				.. " | { "
+				.. "IFS= read -r key; IFS= read -r tab; "
+				.. '[ -z "$tab" ] && exit 0; '
+				.. 'if [ "$key" = "ctrl-d" ]; then '
+				..   zs .. ' zellij action go-to-tab-name "$tab" && '
+				..   zs .. " zellij action close-tab; "
+				-- Tab name is "project/branch"; worktree at ~/code/project/.worktrees/branch.
+				-- Project may be 1 or 2 path components (repo vs org/repo), so try both.
+				.. 'code_dir="$HOME/code"; '
+				.. 'proj=$(echo "$tab" | cut -d/ -f1-2); branch="${tab#${proj}/}"; '
+				.. 'wt="${code_dir}/${proj}/.worktrees/${branch}"; '
+				.. '[ ! -d "$wt" ] && proj=$(echo "$tab" | cut -d/ -f1) && branch="${tab#${proj}/}" && wt="${code_dir}/${proj}/.worktrees/${branch}"; '
+				.. '[ -d "$wt" ] && git -C "${code_dir}/${proj}" worktree remove --force "$wt" 2>/dev/null; '
+				.. "else "
+				..   zs .. ' zellij action go-to-tab-name "$tab"; '
+				.. "fi; }"
+				.. "; exit 0"
+		else
+			cmd = fzf.cmd({ label = "Tabs", prompt = "tab" }) .. " < " .. tmpfile .. "; exit 0"
+		end
+
+		fzf.spawn({ "/bin/zsh", "-l", "-c", cmd }, 750, 300)
+	end)
+end
+
 return M

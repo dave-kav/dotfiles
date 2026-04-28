@@ -2,7 +2,6 @@ local wezterm = require('wezterm')
 local platform = require('utils.platform')
 local backdrops = require('utils.backdrops')
 local projects = require('utils.projects')
-local fzf = require('utils.fzf')
 local workspace_history = require('utils.workspace-history')
 local act = wezterm.action
 
@@ -57,76 +56,12 @@ local keys = {
             window:perform_action(projects.new_worktree_session(), pane)
         end),
     },
-    -- Cmd+Ctrl+E: session picker — all Zellij tabs in the current session.
-    -- Shows every tab (worktree sessions, claude tabs, etc.) and navigates to the selection.
+    -- Cmd+Ctrl+E: tab picker — all Zellij tabs in the current session.
     {
         key = 'e',
         mods = mod.SUPER_REV,
         action = wezterm.action_callback(function(window, pane)
-            local proc = pane:get_foreground_process_name() or ''
-            local in_zellij = proc:find('zellij', 1, true) ~= nil
-            local session = window:active_workspace()
-            local lines = {}
-
-            if in_zellij then
-                local handle = io.popen(
-                    '/bin/zsh -l -c \'ZELLIJ_SESSION_NAME="' .. session
-                    .. '" zellij action query-tab-names 2>/dev/null\''
-                )
-                if handle then
-                    for name in handle:lines() do
-                        if name ~= '' then
-                            table.insert(lines, name)
-                        end
-                    end
-                    handle:close()
-                end
-            else
-                -- Fallback: WezTerm tabs
-                for _, tab in ipairs(window:mux_window():tabs()) do
-                    local ap = tab:active_pane()
-                    table.insert(lines, ap:get_title() or tostring(tab:tab_id()))
-                end
-            end
-
-            local tmpfile = '/tmp/wezterm-session-picker'
-            local f = io.open(tmpfile, 'w')
-            if f then
-                f:write(#lines > 0 and table.concat(lines, '\n') .. '\n'
-                    or '(no sessions — use Cmd+T to start one)\n')
-                f:close()
-            end
-
-            local cmd
-            if in_zellij then
-                local zs = 'ZELLIJ_SESSION_NAME="' .. session .. '"'
-                cmd = fzf.cmd({ label = 'Sessions', prompt = 'session', expect = 'ctrl-d', header = 'ctrl-d: close tab + remove worktree' })
-                    .. ' < ' .. tmpfile
-                    .. ' | { '
-                    .. 'IFS= read -r key; IFS= read -r tab; '
-                    .. '[ -z "$tab" ] && exit 0; '
-                    .. 'if [ "$key" = "ctrl-d" ]; then '
-                    ..   zs .. ' zellij action go-to-tab-name "$tab" && '
-                    ..   zs .. ' zellij action close-tab; '
-                    -- Worktree cleanup: tab name is "project/branch", worktree at ~/code/project/.worktrees/branch.
-                    -- Project may be 1 or 2 path components (repo vs org/repo), so try both.
-                    .. 'code_dir="$HOME/code"; '
-                    .. 'proj=$(echo "$tab" | cut -d/ -f1-2); branch="${tab#${proj}/}"; '
-                    .. 'wt="${code_dir}/${proj}/.worktrees/${branch}"; '
-                    .. 'if [ ! -d "$wt" ]; then '
-                    ..   'proj=$(echo "$tab" | cut -d/ -f1); branch="${tab#${proj}/}"; '
-                    ..   'wt="${code_dir}/${proj}/.worktrees/${branch}"; '
-                    .. 'fi; '
-                    .. '[ -d "$wt" ] && git -C "${code_dir}/${proj}" worktree remove --force "$wt" 2>/dev/null; '
-                    .. 'else '
-                    ..   zs .. ' zellij action go-to-tab-name "$tab"; '
-                    .. 'fi; }'
-                    .. '; exit 0'
-            else
-                cmd = fzf.cmd({ label = 'Sessions', prompt = 'session' }) .. ' < ' .. tmpfile .. '; exit 0'
-            end
-
-            fzf.spawn({ '/bin/zsh', '-l', '-c', cmd }, 750, 300)
+            window:perform_action(projects.choose_tab(), pane)
         end),
     },
     { key = 'w',          mods = mod.SUPER_REV, action = act.CloseCurrentTab({ confirm = false }) },
