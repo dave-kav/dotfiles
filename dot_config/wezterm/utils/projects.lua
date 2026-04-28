@@ -266,9 +266,12 @@ M.choose_session = function()
 			.. " --no-info"
 			.. " --padding 1,2"
 			.. ' --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
+			.. ' --expect "ctrl-d"'
+			.. ' --header "  ctrl-d: delete session"'
 			.. " < " .. tmpfile
-		local cmd = "selection=$(" .. fzf_cmd .. ")"
-			.. " && echo \"$selection\" > " .. result_file
+		-- --expect outputs the key on line 1, selection on line 2
+		local cmd = "result=$(" .. fzf_cmd .. ")"
+			.. " && printf '%s\\n' \"$result\" > " .. result_file
 			.. "; exit 0"
 
 		local _, _, new_win = wezterm.mux.spawn_window({
@@ -293,14 +296,31 @@ M.choose_session = function()
 				return
 			end
 
-			local line = rf:read("*line")
+			local content = rf:read("*all")
 			rf:close()
 			os.remove(result_file)
+			if not content or content == "" then return end
+
+			-- --expect: line 1 = key pressed ("ctrl-d" or ""), line 2 = selection
+			local pressed_key = content:match("^([^\n]*)\n") or ""
+			local line = content:match("^[^\n]*\n([^\n]+)") or ""
 
 			if not line or line == "" then return end
 
 			local id = line:match("^(%S+)")
 			if not id then return end
+
+			-- ctrl-d: delete the session
+			if pressed_key == "ctrl-d" then
+				local kind, name = id:match("^(%a+):(.+)$")
+				if kind == "zellij" then
+					wezterm.run_child_process { "/bin/zsh", "-l", "-c",
+						'zellij delete-session "' .. name .. '" 2>/dev/null'
+					}
+				end
+				-- WezTerm workspaces close naturally when their windows close
+				return
+			end
 			local kind, name = id:match("^(%a+):(.+)$")
 			if not kind then return end
 

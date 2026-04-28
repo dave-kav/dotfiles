@@ -8,15 +8,17 @@ local last_workspace = {}
 
 M.setup = function()
     wezterm.on('update-status', function(window)
-        local workspace = window:active_workspace()
-        local win_id = window:window_id()
+        local ok, workspace = pcall(function() return window:active_workspace() end)
+        if not ok then return end
+        local ok2, win_id = pcall(function() return window:window_id() end)
+        if not ok2 then return end
 
         if last_workspace[win_id] == workspace then
             return
         end
         last_workspace[win_id] = workspace
 
-        projects.set_workspace_backdrop(window, workspace)
+        pcall(projects.set_workspace_backdrop, window, workspace)
     end)
 end
 

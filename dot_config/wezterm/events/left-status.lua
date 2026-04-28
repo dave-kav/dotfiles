@@ -27,21 +27,24 @@ cells
 
 M.setup = function()
    wezterm.on('update-right-status', function(window, _pane)
-      local name = window:active_key_table()
+      local ok_kt, name = pcall(function() return window:active_key_table() end)
+      local ok_li, leader = pcall(function() return window:leader_is_active() end)
+      if not ok_kt and not ok_li then return end
+
       local res = {}
 
-      if name then
+      if ok_kt and name then
          cells
             :update_segment_text(2, GLYPH_KEY_TABLE)
             :update_segment_text(3, ' ' .. string.upper(name))
          res = cells:render_all()
       end
 
-      if window:leader_is_active() then
+      if ok_li and leader then
          cells:update_segment_text(2, GLYPH_KEY):update_segment_text(3, ' ')
          res = cells:render_all()
       end
-      window:set_left_status(wezterm.format(res))
+      pcall(function() window:set_left_status(wezterm.format(res)) end)
    end)
 end
 

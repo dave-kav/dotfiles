@@ -48,44 +48,153 @@ local keys = {
     { key = 'LeftArrow',  mods = 'OPT',         action = act.SendString '\u{1b}b' }, -- Move back one word
     { key = 'RightArrow', mods = 'OPT',         action = act.SendString '\u{1b}f' }, -- Move forward one word
 
-    -- Cmd+T: new Claude session.
-    -- Inside Zellij: creates a Zellij tab (persists, no new WezTerm workspace).
-    -- Outside Zellij: falls back to a WezTerm tab with a named Zellij session.
+    -- Cmd+T: new worktree dev session.
+    -- Two-step fzf: pick project (pre-selects current) → pick or type branch name.
+    -- Creates a git worktree at project/.worktrees/branch, then opens a Zellij
+    -- dev tab (nvim + claude + terminal) named "project/branch" in that worktree.
     {
         key = 't',
         mods = mod.SUPER,
         action = wezterm.action_callback(function(window, pane)
-            local cwd_uri = pane:get_current_working_dir()
-            local cwd = (cwd_uri and cwd_uri.file_path) or wezterm.home_dir
-            local dir = (cwd:match('[^/]+$') or 'claude'):gsub('[^%w%-]', '_')
-            local ts = tostring(os.time()):sub(-6)
-            local layout = wezterm.home_dir .. '/.config/zellij/layouts/claude.kdl'
             local proc = pane:get_foreground_process_name() or ''
-            if proc:find('zellij', 1, true) then
-                local session = window:active_workspace()
-                local tab_name = 'claude-' .. dir .. '-' .. ts
-                wezterm.run_child_process { '/bin/zsh', '-l', '-c',
-                    'ZELLIJ_SESSION_NAME="' .. session .. '"'
-                    .. ' zellij action new-tab'
-                    .. ' --layout "' .. layout .. '"'
-                    .. ' --name "' .. tab_name .. '"'
-                    .. ' --cwd "' .. cwd .. '"'
-                }
-            else
-                local session = 'claude-' .. dir .. '-' .. ts
-                window:perform_action(
-                    act.SpawnCommandInNewTab {
-                        cwd = cwd,
-                        args = { '/bin/zsh', '-l', '-c', 'zellij attach --create "' .. session .. '"' },
-                    },
-                    pane
-                )
+            local in_zellij = proc:find('zellij', 1, true) ~= nil
+            local session = window:active_workspace()
+            local home = wezterm.home_dir
+            local code_dir = home .. '/code'
+            local dev_layout = home .. '/.config/zellij/layouts/dev.kdl'
+
+            -- Detect current project from the active pane's CWD
+            local cwd_uri = pane:get_current_working_dir()
+            local cwd = (cwd_uri and cwd_uri.file_path) or home
+            local current_project = ''
+            if cwd:sub(1, #code_dir + 1) == code_dir .. '/' then
+                local rel = cwd:sub(#code_dir + 2)
+                -- Capture up to two components so org/repo pre-selects correctly
+                current_project = rel:match('^([^/]+/[^/]+)') or rel:match('^([^/]+)') or ''
             end
+
+            local ts = tostring(os.time())
+            local result_file = '/tmp/wezterm-worktree-result-' .. ts
+            local script_file = '/tmp/wezterm-worktree-' .. ts .. '.zsh'
+
+            local fzf_common = [[ \
+    --border rounded --layout reverse --pointer "›" \
+    --no-info --padding 1,2 \
+    --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"]]
+
+            local preselect = current_project ~= ''
+                and (' \\\n    --query "' .. current_project .. '"')
+                or ''
+
+            -- Build the two-step script as a list of lines (easier than escaping inline)
+            local lines = {
+                '#!/bin/zsh',
+                'code_dir="' .. code_dir .. '"',
+                'result_file="' .. result_file .. '"',
+                '',
+                '# Find git repos in ~/code (up to 3 levels deep)',
+                'projects=$(find "$code_dir" -maxdepth 3 -name ".git" -type d 2>/dev/null \\',
+                '    | sed "s|/.git$||" | sed "s|^$code_dir/||" | sort)',
+                '[ -z "$projects" ] && exit 1',
+                '',
+                '# Step 1: pick project',
+                'project=$(echo "$projects" | fzf \\',
+                '    --border-label "  Project  " --prompt "  project › "' .. fzf_common .. preselect .. ')',
+                '[ -z "$project" ] && exit 0',
+                'project_dir="$code_dir/$project"',
+                '',
+                '# Step 2: pick or type a branch (local only; type a name to create new)',
+                'branches=$(git -C "$project_dir" branch --format="%(refname:short)" 2>/dev/null | grep -v "^$")',
+                '',
+                'fzf_out=$(echo "$branches" | fzf \\',
+                '    --border-label "  Branch (select or type new)  " --prompt "  branch › "' .. fzf_common .. ' \\',
+                '    --print-query)',
+                'query=$(echo "$fzf_out" | head -1)',
+                'selection=$(echo "$fzf_out" | sed -n "2p")',
+                'branch="${selection:-$query}"',
+                '[ -z "$branch" ] && exit 0',
+                '',
+                '# Create worktree or find existing one for this branch',
+                'worktree_dir="$project_dir/.worktrees/$branch"',
+                'if [ ! -d "$worktree_dir" ]; then',
+                '    mkdir -p "$project_dir/.worktrees"',
+                '    if ! git -C "$project_dir" worktree add "$worktree_dir" "$branch" 2>/dev/null; then',
+                '        # Branch may already be checked out in another worktree — find it',
+                '        existing=$(git -C "$project_dir" worktree list --porcelain 2>/dev/null \\',
+                '            | awk -v b="refs/heads/$branch" \'',
+                '                /^worktree / { wt = $2 }',
+                '                $0 == "branch " b { print wt; exit }',
+                '            \')',
+                '        if [ -n "$existing" ]; then',
+                '            worktree_dir="$existing"',
+                '        else',
+                '            git -C "$project_dir" worktree add -b "$branch" "$worktree_dir" || exit 1',
+                '        fi',
+                '    fi',
+                'fi',
+                '',
+                'printf "%s|%s|%s\\n" "$project" "$branch" "$worktree_dir" > "$result_file"',
+            }
+            local script = table.concat(lines, '\n') .. '\n'
+
+            local sf = io.open(script_file, 'w')
+            if sf then sf:write(script); sf:close() end
+
+            local _, _, new_win = wezterm.mux.spawn_window({
+                args = { '/bin/zsh', '-l', script_file },
+            })
+            if new_win then
+                local ok, gui_win = pcall(function() return new_win:gui_window() end)
+                if ok and gui_win then gui_win:set_inner_size(750, 400) end
+            end
+
+            -- Poll for result then open the dev tab
+            local poll_count = 0
+            local function check_result()
+                poll_count = poll_count + 1
+                if poll_count > 300 then os.remove(script_file); return end
+
+                local rf = io.open(result_file, 'r')
+                if not rf then wezterm.time.call_after(0.2, check_result); return end
+
+                local line = rf:read('*line')
+                rf:close()
+                os.remove(result_file)
+                os.remove(script_file)
+                if not line or line == '' then return end
+
+                local project, branch, worktree_dir = line:match('^([^|]+)|([^|]+)|(.+)$')
+                if not project then return end
+
+                local tab_name = project .. '/' .. branch
+
+                if in_zellij then
+                    wezterm.run_child_process { '/bin/zsh', '-l', '-c',
+                        'ZELLIJ_SESSION_NAME="' .. session .. '"'
+                        .. ' zellij action new-tab'
+                        .. ' --layout "' .. dev_layout .. '"'
+                        .. ' --name "' .. tab_name .. '"'
+                        .. ' --cwd "' .. worktree_dir .. '"'
+                    }
+                else
+                    -- Not in Zellij: open a WezTerm tab attached to the project's session
+                    local zellij_session = project:gsub('[^%w%-_]', '_')
+                    window:perform_action(
+                        act.SpawnCommandInNewTab {
+                            cwd = worktree_dir,
+                            args = { '/bin/zsh', '-l', '-c',
+                                'zellij attach --create "' .. zellij_session .. '"'
+                            },
+                        },
+                        pane
+                    )
+                end
+            end
+            wezterm.time.call_after(0.2, check_result)
         end),
     },
-    -- Cmd+Ctrl+E: fuzzy picker for Claude sessions.
-    -- Inside Zellij: lists claude-* tabs via query-tab-names; navigates with go-to-tab-name.
-    -- Outside Zellij: lists WezTerm tabs by ✳ title prefix; activates via wezterm cli.
+    -- Cmd+Ctrl+E: session picker — all Zellij tabs in the current session.
+    -- Shows every tab (worktree sessions, claude tabs, etc.) and navigates to the selection.
     {
         key = 'e',
         mods = mod.SUPER_REV,
@@ -94,10 +203,10 @@ local keys = {
             local in_zellij = proc:find('zellij', 1, true) ~= nil
             local session = window:active_workspace()
             local lines = {}
+
             local fzf_base = 'fzf'
-                .. ' --with-nth 2..'
                 .. ' --border rounded'
-                .. ' --border-label "  Claude Sessions  "'
+                .. ' --border-label "  Sessions  "'
                 .. ' --layout reverse'
                 .. ' --prompt "  session › "'
                 .. ' --pointer "›"'
@@ -106,63 +215,43 @@ local keys = {
                 .. ' --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
 
             if in_zellij then
-                -- Query claude-* tabs from the current Zellij session
                 local handle = io.popen(
                     '/bin/zsh -l -c \'ZELLIJ_SESSION_NAME="' .. session
                     .. '" zellij action query-tab-names 2>/dev/null\''
                 )
                 if handle then
                     for name in handle:lines() do
-                        if name:match('^claude%-') then
-                            -- Strip "claude-" prefix and trailing -NNNNNN timestamp for display
-                            local label = name:gsub('^claude%-', ''):gsub('%-%d+$', '')
-                            table.insert(lines, name .. ' ' .. label)
+                        if name ~= '' then
+                            table.insert(lines, name)
                         end
                     end
                     handle:close()
                 end
             else
-                -- Scan WezTerm tabs for Claude processes (✳ title prefix = Claude Code)
+                -- Fallback: WezTerm tabs
                 for _, tab in ipairs(window:mux_window():tabs()) do
                     local ap = tab:active_pane()
-                    local title = ap:get_title() or ''
-                    local is_claude = (ap:get_foreground_process_name() or ''):find('claude', 1, true)
-                        or title:find('\xe2\x9c\xb3', 1, true)
-                    if is_claude then
-                        local cwd_uri = ap:get_current_working_dir()
-                        local cwd = (cwd_uri and cwd_uri.file_path) or ''
-                        local home = wezterm.home_dir
-                        local cwd_display = cwd:sub(1, #home) == home and ('~' .. cwd:sub(#home + 1)) or (cwd ~= '' and cwd or '?')
-                        local sname = title:match('^%S+%s+(.+)$') or ''
-                        if sname == 'Claude Code' then sname = '' end
-                        local label = sname ~= '' and (sname .. '  ' .. cwd_display) or cwd_display
-                        table.insert(lines, tostring(tab:tab_id()) .. ' ' .. label)
-                    end
+                    table.insert(lines, ap:get_title() or tostring(tab:tab_id()))
                 end
             end
 
-            local tmpfile = '/tmp/wezterm-claude-picker'
+            local tmpfile = '/tmp/wezterm-session-picker'
             local f = io.open(tmpfile, 'w')
             if f then
                 f:write(#lines > 0 and table.concat(lines, '\n') .. '\n'
-                    or '(no Claude sessions — use Cmd+T to start one)\n')
+                    or '(no sessions — use Cmd+T to start one)\n')
                 f:close()
             end
 
             local cmd, spawn_env
             if in_zellij then
                 cmd = fzf_base .. ' < ' .. tmpfile
-                    .. " | awk '{print $1}'"
                     .. ' | { read tab && [ -n "$tab" ]'
                     .. ' && ZELLIJ_SESSION_NAME="' .. session .. '" zellij action go-to-tab-name "$tab"; }'
                     .. '; exit 0'
                 spawn_env = {}
             else
-                cmd = fzf_base .. ' < ' .. tmpfile
-                    .. " | awk '{print $1}'"
-                    .. " | grep -E '^[0-9]+$'"
-                    .. ' | xargs -I{} wezterm cli activate-tab --tab-id {}'
-                    .. '; exit 0'
+                cmd = fzf_base .. ' < ' .. tmpfile .. '; exit 0'
                 spawn_env = { WEZTERM_PANE = tostring(pane:pane_id()) }
             end
 

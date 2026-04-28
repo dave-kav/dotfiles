@@ -8,8 +8,10 @@ local _current = nil
 
 M.setup = function()
     wezterm.on('update-status', function(window)
-        if not window:is_focused() then return end
-        local workspace = window:active_workspace()
+        local ok, focused = pcall(function() return window:is_focused() end)
+        if not ok or not focused then return end
+        local ok2, workspace = pcall(function() return window:active_workspace() end)
+        if not ok2 then return end
         if workspace ~= _current then
             M.previous = _current
             _current = workspace
