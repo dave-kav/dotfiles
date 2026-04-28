@@ -12,38 +12,34 @@ WezTerm  (terminal window + workspaces + backdrops)
 
 ---
 
-## Shell Aliases & Functions
-
-| Command | Action |
-|---------|--------|
-| `dev` | Attach/create zellij dev session named after cwd |
-| `dev my-name` | Attach/create named dev session |
-| `zj` | Fuzzy-pick and attach to existing zellij session |
-| `zjd` | Fuzzy-pick and delete a zellij session |
-| `worktree <branch>` | Create git worktree, copy `.envrc.local`, run `task setup` |
-| `workflow` | Open this doc in MarkText |
-
----
-
 ## WezTerm Bindings (`Cmd` = macOS Super key)
 
 ### Sessions & Projects
 | Key | Action |
 |-----|--------|
-| `Cmd+Ctrl+p` | Pick project → new WezTerm workspace + zellij dev session |
-| `Cmd+Ctrl+f` | Fuzzy switch between workspaces |
-| `Cmd+Ctrl+r` | Rename current workspace |
-| `F5` | Workspace switcher |
+| `Cmd+T` | Two-step worktree picker: choose project → choose/type branch, creates `.worktrees/<branch>` and opens a Zellij dev tab |
+| `Cmd+Ctrl+E` | Tab picker — all Zellij tabs in current session. `ctrl-d` closes tab + removes worktree |
+| `Cmd+Ctrl+J` | Session picker — WezTerm workspaces + detached Zellij sessions. `ctrl-n` new worktree, `ctrl-d` delete session |
+| `Cmd+Ctrl+P` | Project picker — switch current window to a project workspace |
+| `Cmd+N` | New WezTerm window with project picker |
+| `Cmd+Ctrl+;` | Toggle back to previous workspace |
+| `Cmd+Ctrl+R` | Rename current workspace |
 
 ### Tabs
 | Key | Action |
 |-----|--------|
-| `Cmd+t` | New tab (auto-opens zellij session picker) |
-| `Cmd+D` | New tab: zellij dev layout in current dir |
-| `Cmd+w` | Close current pane |
-| `Cmd+Ctrl+w` | Close current tab |
-| `Cmd+[` / `Cmd+]` | Previous / next tab |
+| `Cmd+[` / `Cmd+]` | Previous / next tab (sends `Alt+[/]` to Zellij when inside it) |
 | `Cmd+Ctrl+[` / `Cmd+Ctrl+]` | Move tab left / right |
+| `Cmd+Ctrl+W` | Close current tab |
+
+### Panes (Zellij-aware)
+| Key | Action |
+|-----|--------|
+| `Cmd+\` | Split vertically (Zellij: new pane down) |
+| `Cmd+Ctrl+\` | Split horizontally (Zellij: new pane right) |
+| `Cmd+Enter` | Zoom/maximise pane (Zellij: `Alt+m`) |
+| `Cmd+W` | Close pane (Zellij: close-pane) |
+| `Cmd+Ctrl+H/J/K/L` | Navigate panes |
 
 ### Backgrounds
 | Key | Action |
@@ -51,40 +47,38 @@ WezTerm  (terminal window + workspaces + backdrops)
 | `Cmd+/` | Random background |
 | `Cmd+,` / `Cmd+.` | Cycle background back / forward |
 | `Cmd+Ctrl+/` | Pick background from list |
-| `Cmd+b` | Toggle focus mode (dimmed background) |
-
-### WezTerm Panes (rarely needed — use zellij instead)
-| Key | Action |
-|-----|--------|
-| `Cmd+\` | Split vertically |
-| `Cmd+Ctrl+\` | Split horizontally |
-| `Cmd+Ctrl+h/j/k/l` | Navigate panes |
-| `Cmd+Enter` | Zoom/maximise pane (zellij-aware: sends `Alt+m` when in zellij) |
+| `Cmd+B` | Toggle focus mode (dimmed background) |
 
 ### Misc
 | Key | Action |
 |-----|--------|
+| `Cmd+F` | Search scrollback |
+| `Cmd+K` | Clear scrollback |
+| `Cmd+U` | Scroll up 5 lines |
+| `Cmd+V` | Paste from primary selection |
+| `Cmd+-` / `Cmd+=` | Shrink / grow window |
 | `F1` | Copy mode (vim bindings) |
 | `F2` | Command palette |
-| `F11` | Fullscreen |
-| `Cmd+f` | Search scrollback |
-| `Cmd+k` | Clear scrollback |
+| `F11` / `Ctrl+Shift+F` | Fullscreen |
+| `F12` | Debug overlay |
 | `Shift+click` | Open link |
 
 ---
 
 ## Zellij
 
-### The key rule: `Ctrl+g` toggles zellij on/off
-- **Default (locked mode)** — all keys pass through to nvim/terminal.
-- **Press `Ctrl+g`** — enter normal mode to manage panes/tabs/sessions.
-- **Press `Ctrl+g` again** — back to locked.
+### The key rule: `Ctrl+g` toggles lock on/off
+- **Default (locked mode)** — all keys pass through to nvim/terminal
+- **`Ctrl+g`** — enter normal mode to manage panes/tabs/sessions
+- **`Ctrl+g` again** — back to locked
 
 ### Always available (locked + all modes)
 | Key | Action |
 |-----|--------|
 | `Alt+h/j/k/l` | Move focus between panes (works across nvim splits too) |
 | `Alt+m` | Toggle fullscreen pane |
+| `Alt+[` / `Alt+]` | Previous / next tab (locked mode only) |
+| `Alt+1–9` | Go to tab N (locked mode only) |
 | `Ctrl+/` | Open keybinding reference (floating panel) |
 
 ### Always available (all modes except locked)
@@ -97,8 +91,8 @@ WezTerm  (terminal window + workspaces + backdrops)
 | `Ctrl+h` | Enter move mode |
 | `Ctrl+s` | Enter scroll mode |
 | `Ctrl+o` | Enter session mode |
-| `Alt+d` | New pane (down) |
-| `Alt+r` | New pane (right) |
+| `Alt+d` | New pane down |
+| `Alt+r` | New pane right |
 | `Alt+n` | New pane |
 | `Alt+f` | Toggle floating panes |
 | `Alt+[` / `Alt+]` | Cycle swap layouts |
@@ -120,7 +114,6 @@ WezTerm  (terminal window + workspaces + backdrops)
 | `w` | Toggle floating panes |
 | `i` | Pin pane |
 | `c` | Rename pane |
-| `p` | Switch focus |
 
 ### Tab mode (`Ctrl+t`)
 | Key | Action |
@@ -139,8 +132,8 @@ WezTerm  (terminal window + workspaces + backdrops)
 ### Resize mode (`Ctrl+n`)
 | Key | Action |
 |-----|--------|
-| `h/j/k/l` | Grow pane left/down/up/right |
-| `H/J/K/L` | Shrink pane left/down/up/right |
+| `h/j/k/l` | Grow pane in direction |
+| `H/J/K/L` | Shrink pane in direction |
 | `+` / `-` | Grow / shrink |
 
 ### Move mode (`Ctrl+h`)
@@ -159,7 +152,7 @@ WezTerm  (terminal window + workspaces + backdrops)
 | `s` | Enter search |
 | `e` | Edit scrollback in `$EDITOR` |
 
-### Search mode (from scroll → `s`)
+### Search (from scroll → `s`)
 | Key | Action |
 |-----|--------|
 | `n` / `p` | Next / previous match |
@@ -171,206 +164,206 @@ WezTerm  (terminal window + workspaces + backdrops)
 | Key | Action |
 |-----|--------|
 | `d` | Detach from session |
-| `w` | Session manager (switch/kill sessions) |
+| `w` | Session manager |
 | `c` | Configuration / keybinding reference |
-| `a` | About |
 | `p` | Plugin manager |
-
-### Status bar (zjstatus)
-- **Dev sessions**: bar is invisible while in locked mode (nvim handles status). Mode badge appears when you enter pane/tab/etc mode. Hints show on the right.
-- **Plain sessions**: full bar — mode · session · tabs · git branch · dirty · time.
-
-### Zellij attention (Claude Code)
-When Claude needs input → ⏳ on tab
-When Claude finishes → ✅ on tab
-Focusing the pane clears the icon.
 
 ---
 
-## nvim — Core Bindings (AstroNvim)
+## nvim
 
-> **Leader = `<Space>`**
-> Press `<Space>` and pause — which-key shows all available bindings.
-> `<Space>fk` opens Legendary: fuzzy search every keymap and command.
-> `:AstroReload` reloads config without restarting.
+> **Leader = `Space`** — press and pause to see which-key hints
 
 ### File navigation
 | Key | Action |
 |-----|--------|
-| `<Space><Space>` | Smart open (frecency) |
-| `<Space>ff` | Find file (Telescope) |
-| `<Space>fw` | Find word in project |
-| `<Space>fo` | Recent files |
-| `<Space>e` | Toggle neo-tree sidebar |
-| `<Space>bb` | Switch buffer |
-| `<Space>bc` | Close buffer |
-| `<Space>P` | Project manager |
+| `Space Space` | Smart open (frecency + fzf) |
+| `Space f f` | Find file |
+| `Space f w` | Live grep |
+| `Space f o` | Recent files |
+| `Space f b` | Buffers |
+| `Space f u` | Undo history |
+| `Space f s` | Git status |
+| `Space f r` | Resume last picker |
+| `Space f '` | Marks/bookmarks |
+| `Space f n` | Notifications |
 
-### LSP navigation
+### Buffers & windows
 | Key | Action |
 |-----|--------|
+| `Shift+H` / `Shift+L` | Previous / next buffer |
+| `]b` / `[b` | Next / prev buffer |
+| `Space c` | Close buffer |
+| `Space b n` | New buffer |
+| `Space b p` | Pin buffer |
+| `Space b o` | Close other buffers |
+| `Space s v` | Split vertical |
+| `Space s h` | Split horizontal |
+| `Space s x` | Close window |
+| `Alt+H/J/K/L` | Move between nvim splits and Zellij panes seamlessly |
+| `Ctrl+Alt+H/J/K/L` | Resize splits |
+
+### LSP
+| Key | Action |
+|-----|--------|
+| `K` | Hover docs |
+| `Ctrl+K` | Signature help |
 | `gd` | Go to definition |
 | `gD` | Go to declaration |
-| `grr` | References (Telescope) |
-| `gri` | Implementation (Telescope) |
-| `grt` | Type definition (Telescope) |
-| `grn` | Rename symbol (inline preview) |
-| `gra` | Code action |
-| `K` | Hover docs |
-| `<Space>lf` | Format file |
-| `<Space>ld` | Hover diagnostics |
-| `[e` / `]e` | Previous / next error |
-| `[w` / `]w` | Previous / next warning |
+| `grr` | References |
+| `gri` | Implementation |
+| `gy` | Type definition |
+| `grn` / `Space l r` | Rename symbol (inline preview) |
+| `gra` / `Space l a` | Code actions |
+| `Space l f` / `Space c f` | Format buffer |
+| `Space l s` | Document symbols |
+| `Space l S` | Workspace symbols |
+| `Space l h` | Toggle inlay hints |
+| `Space l i` | LSP info |
+| `[d` / `]d` | Prev / next diagnostic |
+| `[e` / `]e` | Prev / next error |
+| `[w` / `]w` | Prev / next warning |
+| `Space l D` | Buffer diagnostics (Telescope) |
 
-### Jump navigation
+### Diagnostics & Trouble
 | Key | Action |
 |-----|--------|
-| `Ctrl+o` / `Ctrl+i` | Jump back / forward (Portal popup) |
-| `s` + 2 chars | Leap: jump anywhere visible |
-| `Ctrl+d` / `Ctrl+u` | Half page down / up |
+| `Space x x` | Trouble: all diagnostics |
+| `Space x d` | Trouble: buffer diagnostics |
+| `Space x L` | Trouble: LSP panel |
+| `Space x s` | Trouble: symbols |
 
-### Pane / split navigation
+### Git
 | Key | Action |
 |-----|--------|
-| `Alt+h/j/k/l` | Move between nvim splits and zellij panes seamlessly |
+| `]h` / `[h` | Next / prev hunk |
+| `Space g h s` | Stage hunk |
+| `Space g h r` | Reset hunk |
+| `Space g h S` | Stage buffer |
+| `Space g h u` | Undo stage hunk |
+| `Space g h b` | Blame line (full) |
+| `Space g h p` | Preview hunk |
+| `Space g h d` | Diff this |
+| `Space g v` | Diffview open |
+| `Space g H` | Diffview: file history |
+| `Space g V` | Diffview close |
+| `Space g y` | Copy git permalink |
+| `Space g Y` | Open git permalink in browser |
+| `Space t b` | Toggle inline blame |
+| `Space t B` | Toggle gutter blame column |
+| `ih` | Select hunk (text object, operator/visual) |
 
----
-
-## nvim — Plugin Bindings
-
-### Git (`<Space>g`)
+### GitHub (Octo)
 | Key | Action |
 |-----|--------|
-| `<Space>gg` | Lazygit |
-| `<Space>gj` / `<Space>gk` | Next / prev hunk |
-| `<Space>gs` | Stage hunk |
-| `<Space>gr` | Reset hunk |
-| `<Space>gb` | Blame line |
-| `<Space>gy` | Copy git permalink |
-| `<Space>gY` | Open git permalink in browser |
-| `<Space>gv` | Diffview: side-by-side diff |
-| `<Space>gH` | Diffview: file history |
+| `Space O p` | PR list |
+| `Space O i` | Issue list |
+| `Space O r` | Start review |
+| `Space O a` | Add assignee |
 
-### Tests (`<Space>T`) — Python only
+### Tests (Python / pytest)
 | Key | Action |
 |-----|--------|
-| `<Space>Tt` | Run nearest test |
-| `<Space>Tf` | Run test file |
-| `<Space>Ts` | Test summary panel |
-| `<Space>To` | Test output panel |
-| `<Space>TS` | Stop tests |
+| `Space T t` | Run nearest test |
+| `Space T f` | Run test file |
+| `Space T s` | Test summary panel |
+| `Space T o` | Test output panel |
+| `Space T S` | Stop tests |
 | `]t` / `[t` | Next / prev failed test |
 
-Uses `uv run pytest` when `pyproject.toml` is found.
+Uses `uv run python -m pytest` when `pyproject.toml` exists.
 
-### Notes (`<Space>N`) — obsidian.nvim
-| Key | Action |
-|-----|--------|
-| `<Space>Nd` | Today's daily note |
-| `<Space>Ny` | Yesterday's note |
-| `<Space>Nn` | New note |
-| `<Space>Nf` | Search notes |
-| `<Space>No` | Quick switch by title |
-| `<Space>Nb` | Backlinks |
-| `<Space>Nt` | Browse by tag |
-| `[[` | Insert wikilink (autocompletes) |
-
-Vault: `~/notes/` — plain markdown, works with/without Obsidian app.
-
-### Diagnostics & Lists (`<Space>x`)
-| Key | Action |
-|-----|--------|
-| `<Space>xx` | Trouble: all diagnostics |
-| `<Space>xd` | Trouble: buffer diagnostics |
-| `<Space>xL` | Trouble: LSP definitions/references |
-| `<Space>xs` | Trouble: symbols |
-
-### Refactoring (`<Space>r`)
+### Refactoring
 | Key | Mode | Action |
 |-----|------|--------|
-| `<Space>rr` | n/v | All valid refactors for selection |
-| `<Space>re` | visual | Extract to function |
-| `<Space>rv` | visual | Extract to variable |
-| `<Space>ri` | n/v | Inline variable |
+| `Space r r` | n/v | Refactor picker |
+| `Space r e` | visual | Extract to function |
+| `Space r v` | visual | Extract to variable |
+| `Space r i` | n/v | Inline variable |
 
-### GitHub (`<Space>O`)
+### Notes (Obsidian)
 | Key | Action |
 |-----|--------|
-| `<Space>Op` | List open PRs |
-| `<Space>Oi` | List issues |
-| `<Space>Or` | Start PR review |
-| `<Space>Oa` | Add assignee |
+| `Space N d` | Today's daily note |
+| `Space N y` | Yesterday's note |
+| `Space N n` | New note |
+| `Space N f` | Search notes |
+| `Space N o` | Quick switch |
+| `Space N b` | Backlinks |
+| `Space N t` | Browse by tag |
+| `Space N c` | New on-call entry (prompts for ticket ID) |
+| `Space N j` | Import Jira XML to on-call note |
+| `Space m p` | Markdown preview toggle |
+
+Vault: `~/notes/` — plain markdown.
 
 ### Search & Replace
 | Key | Action |
 |-----|--------|
-| `<Space>sr` | Grug-far: project-wide search & replace |
+| `Space s r` | Grug-far: project-wide search & replace |
+
+### Sessions
+| Key | Action |
+|-----|--------|
+| `Space S l` | Restore last session |
+| `Space S s` | Restore session for cwd |
+| `Space S d` | Don't save session on exit |
+
+### Terminal
+| Key | Action |
+|-----|--------|
+| `Ctrl+\` | Toggle terminal |
+| `Space t h` | Terminal horizontal |
+| `Space t v` | Terminal vertical |
+| `Space t f` | Terminal float |
+
+### Jump navigation
+| Key | Action |
+|-----|--------|
+| `Ctrl+O` / `Ctrl+I` | Jump back / forward (Portal popup) |
+| `s` + 2 chars | Leap: jump anywhere visible |
 
 ### Misc
 | Key | Action |
 |-----|--------|
-| `<Space>U` | Undotree |
-| `<Space>tw` | Twilight: dim code outside current block |
-| `<Space>mp` | Markdown preview (`.md` files) |
-| `<Space>fml` | 🌧 make it rain |
-| `gcc` / `gc` | Toggle comment line / selection |
-| `Ctrl+n` | Multiple cursors |
+| `Space U` | Undotree |
+| `Space t w` | Twilight: dim outside current block |
+| `Space t c` | Toggle CSV view (`.csv` files) |
+| `Space i` | Toggle value under cursor (true↔false, yes↔no, etc.) |
+| `Space w` | Save file |
+| `Space q` | Quit |
+| `Space f m l` | 🌧 make it rain |
+| `jj` / `jk` | Exit insert mode |
+| `<` / `>` | Indent left/right (stays in visual) |
+| `Alt+J/K` | Move line(s) down/up |
 
 ---
 
-## nvim — Always-on Plugins
+## Multi-worktree workflow
 
-| Plugin | What it does |
-|--------|-------------|
-| `vim-illuminate` | Highlights all occurrences of word under cursor |
-| `modicator` | Line number colour changes with mode |
-| `tint.nvim` | Dims inactive splits |
-| `mini.indentscope` | Animated scope line |
-| `nvim-treesitter-context` | Sticky class/function header |
-| `satellite.nvim` | Scrollbar with diagnostics, git hunks, search results |
-| `rainbow-delimiters` | Colour-matched brackets |
-| `hardtime` | Nudges toward better vim motions (`:Hardtime disable` to pause) |
-| `indent-blankline` | Indent guide lines |
+`Cmd+T` is the entry point for all new work:
 
----
+1. Press `Cmd+T` — fzf shows all git projects under `~/code`
+2. Select a project
+3. fzf shows local branches — select one or type a new name to create it
+4. `ctrl-r` toggles to remote branches, `ctrl-l` back to local
+5. WezTerm creates a new Zellij dev tab named `project/branch` with the dev layout, cwd set to the worktree
 
-## Python LSP (Ruff + Zuban)
+Worktrees live at `~/code/<project>/.worktrees/<branch>`.
 
-| Tool | Role |
-|------|------|
-| `ruff` | Diagnostics + formatting |
-| `zuban` | Completions, go-to-definition, hover |
-
-Both activated via `direnv` + nix shell.
-Install: `uv tool install ruff && uv tool install zuban`
+To close a worktree tab and remove its directory:
+→ `Cmd+Ctrl+E`, select the tab, press `ctrl-d`
 
 ---
 
-## Multi-worktree Claude Code workflow
+## Zellij attention (Claude Code)
 
-```
-WezTerm workspace: whatnot_backend
-  └── zellij dev session
-        ├── nvim  ← main branch
-        └── claude
-
-WezTerm workspace: whatnot_backend_feat-tax  (worktree)
-  └── zellij dev session
-        ├── nvim  ← feat/offline-tax
-        └── claude  ← separate context, no bleed
-```
-
-```bash
-# Create worktree
-worktree feat/offline-tax        # creates ../whatnot_backend_feat-offline-tax
-
-# Open project workspaces via WezTerm picker (Cmd+Ctrl+p)
-# Each workspace gets a deterministic background image
-```
+When Claude needs input → ⏳ appears on the tab
+When Claude finishes → ✅ appears on the tab
+Focusing the pane clears the icon.
 
 ---
 
 ## Shell vi mode
 
-The shell runs in vi mode. `Esc` enters normal mode, `i`/`a` back to insert.
-Works in any zsh prompt — zellij panes, bare terminals, everywhere.
+The shell runs in vi mode. `Esc` enters normal mode, `i`/`a` back to insert. Works in all zsh prompts.
