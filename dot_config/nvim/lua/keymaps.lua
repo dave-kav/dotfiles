@@ -21,14 +21,6 @@ map("n", "<leader>c", function()
   vim.api.nvim_buf_delete(buf, { force = false })
 end, { desc = "Close buffer" })
 
--- Navigate buffers
-map("n", "<S-l>", "<cmd>bnext<CR>", { desc = "Next buffer" })
-map("n", "<S-h>", "<cmd>bprevious<CR>", { desc = "Prev buffer" })
-map("n", "]b", "<cmd>bnext<CR>", { desc = "Next buffer" })
-map("n", "[b", "<cmd>bprevious<CR>", { desc = "Prev buffer" })
-map("n", "]B", "<cmd>blast<CR>", { desc = "Last buffer" })
-map("n", "[B", "<cmd>bfirst<CR>", { desc = "First buffer" })
-
 -- Navigate tabs
 map("n", "]t", "<cmd>tabnext<CR>", { desc = "Next tab" })
 map("n", "[t", "<cmd>tabprevious<CR>", { desc = "Prev tab" })

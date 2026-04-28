@@ -33,6 +33,7 @@ require("lazy").setup({
     { import = "plugins.explorer" },
     { import = "plugins.testing" },
     { import = "plugins.coding" },
+    { import = "plugins.notes" },
     { import = "plugins.navigation" },
   },
   defaults = {
