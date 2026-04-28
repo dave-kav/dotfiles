@@ -2,6 +2,7 @@ local wezterm = require("wezterm")
 local backdrops = require("utils.backdrops")
 local M = {}
 
+
 -- Per-workspace backdrop index — stored in wezterm.GLOBAL so it survives config reloads
 local function _wb()
 	if not wezterm.GLOBAL.workspace_backdrops then
@@ -97,9 +98,7 @@ M.choose_project = function(opts)
 		})
 		if new_win then
 			local ok, gui_win = pcall(function() return new_win:gui_window() end)
-			if ok and gui_win then
-				gui_win:set_inner_size(750, 400)
-			end
+			if ok and gui_win then gui_win:set_inner_size(750, 400) end
 		end
 
 		-- Poll for fzf result (window and pane captured as upvalues)
@@ -205,6 +204,142 @@ M.choose_project = function(opts)
 	end)
 end
 
+-- new_worktree_session(): two-step fzf — pick project, then pick existing branch
+-- or type a new name. Creates git worktree at project/.worktrees/<name> and opens
+-- a Zellij dev tab named "project/branch". Used by Cmd+T and the session picker.
+M.new_worktree_session = function()
+	return wezterm.action_callback(function(window, pane)
+		local proc = pane:get_foreground_process_name() or ""
+		local in_zellij = proc:find("zellij", 1, true) ~= nil
+		local session = window:active_workspace()
+		local home = wezterm.home_dir
+		local code_dir = home .. "/code"
+		local dev_layout = home .. "/.config/zellij/layouts/dev.kdl"
+
+		local cwd_uri = pane:get_current_working_dir()
+		local cwd = (cwd_uri and cwd_uri.file_path) or home
+		local current_project = ""
+		if cwd:sub(1, #code_dir + 1) == code_dir .. "/" then
+			local rel = cwd:sub(#code_dir + 2)
+			current_project = rel:match("^([^/]+/[^/]+)") or rel:match("^([^/]+)") or ""
+		end
+
+		local ts = tostring(os.time())
+		local result_file = "/tmp/wezterm-worktree-result-" .. ts
+		local script_file = "/tmp/wezterm-worktree-" .. ts .. ".zsh"
+
+		local script_lines = {
+			"#!/bin/zsh",
+			'export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"',
+			'code_dir="' .. code_dir .. '"',
+			'result_file="' .. result_file .. '"',
+			"",
+			"# Step 1: pick project",
+			'projects=$(find "$code_dir" -maxdepth 3 -name ".git" -type d 2>/dev/null \\',
+			'    | sed "s|/.git$||" | sed "s|^$code_dir/||" | sort)',
+			'[ -z "$projects" ] && exit 1',
+			'project=$(echo "$projects" | fzf \\',
+			'    --border rounded --layout reverse --pointer "›" \\',
+			'    --border-label "  New Worktree — Project  " --prompt "  project › " \\',
+			'    --no-info --padding 1,2 \\',
+			'    --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
+				.. (current_project ~= "" and (' \\\n    --query "' .. current_project .. '"') or "")
+				.. ")",
+			'[ -z "$project" ] && exit 0',
+			'export project_dir="$code_dir/$project"',
+			"",
+			"# Step 2: pick existing branch or type a new name",
+			'branches=$(git -C "$project_dir" branch --format="%(refname:short)" 2>/dev/null | grep -v "^$" | sort)',
+			'fzf_out=$(echo "$branches" | fzf \\',
+			'    --border rounded --layout reverse --pointer "›" \\',
+			'    --border-label "  New Worktree — Branch  " --prompt "  branch › " \\',
+			'    --header "  [local]  ctrl-r: remote branches" \\',
+			'    --no-info --padding 1,2 \\',
+			'    --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0" \\',
+			"    --bind 'ctrl-r:reload(git -C \"$project_dir\" branch -r --format=\"%(refname:short)\" 2>/dev/null | sed \"s|^origin/||\" | grep -v \"^HEAD\" | sort)+change-header(  [remote]  ctrl-l: local branches)' \\",
+			"    --bind 'ctrl-l:reload(git -C \"$project_dir\" branch --format=\"%(refname:short)\" 2>/dev/null | grep -v \"^$\" | sort)+change-header(  [local]  ctrl-r: remote branches)' \\",
+			'    --print-query)',
+			'query=$(echo "$fzf_out" | head -1)',
+			'selection=$(echo "$fzf_out" | sed -n "2p")',
+			'branch="${selection:-$query}"',
+			'[ -z "$branch" ] && exit 0',
+			"",
+			"# Create worktree (reuse existing if already checked out elsewhere)",
+			'worktree_dir="$project_dir/.worktrees/$branch"',
+			'if [ ! -d "$worktree_dir" ]; then',
+			'    mkdir -p "$project_dir/.worktrees"',
+			'    if ! git -C "$project_dir" worktree add "$worktree_dir" "$branch" 2>/dev/null; then',
+			"        existing=$(git -C \"$project_dir\" worktree list --porcelain 2>/dev/null \\",
+			"            | awk -v b=\"refs/heads/$branch\" '",
+			"                /^worktree / { wt = $2 }",
+			'                $0 == "branch " b { print wt; exit }',
+			"            ')",
+			'        if [ -n "$existing" ]; then',
+			'            worktree_dir="$existing"',
+			'        else',
+			'            git -C "$project_dir" worktree add -b "$branch" "$worktree_dir" || exit 1',
+			'        fi',
+			'    fi',
+			'fi',
+			"",
+			'printf "%s|%s|%s\\n" "$project" "$branch" "$worktree_dir" > "$result_file"',
+		}
+
+		local sf = io.open(script_file, "w")
+		if sf then sf:write(table.concat(script_lines, "\n") .. "\n"); sf:close() end
+
+		local _, _, new_win = wezterm.mux.spawn_window({
+			args = { "/bin/zsh", "-l", script_file },
+		})
+		if new_win then
+			local ok, gui_win = pcall(function() return new_win:gui_window() end)
+			if ok and gui_win then gui_win:set_inner_size(750, 400) end
+		end
+
+		local poll_count = 0
+		local function check_result()
+			poll_count = poll_count + 1
+			if poll_count > 300 then os.remove(script_file); return end
+
+			local rf = io.open(result_file, "r")
+			if not rf then wezterm.time.call_after(0.2, check_result); return end
+
+			local line = rf:read("*line")
+			rf:close()
+			os.remove(result_file)
+			os.remove(script_file)
+			if not line or line == "" then return end
+
+			local proj, branch, worktree_dir = line:match("^([^|]+)|([^|]+)|(.+)$")
+			if not proj then return end
+
+			local tab_name = proj .. "/" .. branch
+
+			if in_zellij then
+				wezterm.run_child_process { "/bin/zsh", "-l", "-c",
+					'ZELLIJ_SESSION_NAME="' .. session .. '"'
+					.. " zellij action new-tab"
+					.. ' --layout "' .. dev_layout .. '"'
+					.. ' --name "' .. tab_name .. '"'
+					.. ' --cwd "' .. worktree_dir .. '"'
+				}
+			else
+				local zellij_session = proj:gsub("[^%w%-_]", "_")
+				window:perform_action(
+					wezterm.action.SpawnCommandInNewTab {
+						cwd = worktree_dir,
+						args = { "/bin/zsh", "-l", "-c",
+							'zellij attach --create "' .. zellij_session .. '"'
+						},
+					},
+					pane
+				)
+			end
+		end
+		wezterm.time.call_after(0.2, check_result)
+	end)
+end
+
 -- Get active zellij session names
 local function zellij_sessions()
 	local sessions = {}
@@ -266,8 +401,8 @@ M.choose_session = function()
 			.. " --no-info"
 			.. " --padding 1,2"
 			.. ' --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
-			.. ' --expect "ctrl-d"'
-			.. ' --header "  ctrl-d: delete session"'
+			.. ' --expect "ctrl-d,ctrl-n"'
+			.. ' --header "  ctrl-n: new worktree  ctrl-d: delete session"'
 			.. " < " .. tmpfile
 		-- --expect outputs the key on line 1, selection on line 2
 		local cmd = "result=$(" .. fzf_cmd .. ")"
@@ -279,9 +414,7 @@ M.choose_session = function()
 		})
 		if new_win then
 			local ok, gui_win = pcall(function() return new_win:gui_window() end)
-			if ok and gui_win then
-				gui_win:set_inner_size(750, 300)
-			end
+			if ok and gui_win then gui_win:set_inner_size(750, 300) end
 		end
 
 		-- Poll for fzf result (window and pane captured as upvalues)
@@ -309,6 +442,12 @@ M.choose_session = function()
 
 			local id = line:match("^(%S+)")
 			if not id then return end
+
+			-- ctrl-n: launch new worktree session picker
+			if pressed_key == "ctrl-n" then
+				window:perform_action(M.new_worktree_session(), pane)
+				return
+			end
 
 			-- ctrl-d: delete the session
 			if pressed_key == "ctrl-d" then

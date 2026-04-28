@@ -31,8 +31,8 @@ layout {
                 mode_prompt        "#[bg=#7dcfff,fg=#1f2335,bold] PROMPT "
 
                 tab_normal    "#[fg=#3b4261,bg=#24283b] {name} "
-                tab_active    "#[fg=#565f89,bg=#24283b] {name} "
-                tab_separator ""
+                tab_active    "#[fg=#7aa2f7,bg=#24283b,bold] {name} "
+                tab_separator "#[fg=#3b4261,bg=#24283b]│"
             }
         }
     }
