@@ -1,7 +1,7 @@
 local wezterm = require("wezterm")
 local backdrops = require("utils.backdrops")
+local fzf = require("utils.fzf")
 local M = {}
-
 
 -- Per-workspace backdrop index — stored in wezterm.GLOBAL so it survives config reloads
 local function _wb()
@@ -16,9 +16,7 @@ M.save_backdrop = function(name, idx)
 end
 
 M.set_workspace_backdrop = function(window, name)
-	if #backdrops.images == 0 then
-		return
-	end
+	if #backdrops.images == 0 then return end
 	local idx = _wb()[name]
 	if not idx then
 		local hash = 0
@@ -36,32 +34,25 @@ local project_dir = wezterm.home_dir .. "/code"
 
 local function project_dirs()
 	local projects = { wezterm.home_dir }
-
-	-- find handles spaces in paths; maxdepth 2 gives top-level + one level deeper
 	local handle = io.popen(
 		"find " .. project_dir .. " -maxdepth 2 -mindepth 1 -type d 2>/dev/null"
 	)
 	if handle then
-		for dir in handle:lines() do
-			table.insert(projects, dir)
-		end
+		for dir in handle:lines() do table.insert(projects, dir) end
 		handle:close()
 	end
-
 	return projects
 end
 
 -- choose_project([opts])
 -- opts.new_window = true  → spawn a brand-new WezTerm window for the chosen project
---                           (used by Cmd+N; current window is left untouched)
 -- opts.new_window = false → switch the current window to the chosen workspace (default)
 M.choose_project = function(opts)
 	opts = opts or {}
-
 	return wezterm.action_callback(function(window, pane)
 		local dirs = project_dirs()
 		local home = wezterm.home_dir
-		local lines = { "__new__ New session\xe2\x80\xa6" }  -- "New session…"
+		local lines = { "__new__ New session\xe2\x80\xa6" }
 		for _, dir in ipairs(dirs) do
 			local label = dir == home and "~"
 				or (dir:sub(1, #project_dir + 1) == project_dir .. "/" and dir:sub(#project_dir + 2))
@@ -73,55 +64,22 @@ M.choose_project = function(opts)
 		local result_file = "/tmp/wezterm-project-result-" .. tostring(os.time())
 
 		local f = io.open(tmpfile, "w")
-		if f then
-			f:write(table.concat(lines, "\n") .. "\n")
-			f:close()
-		end
+		if f then f:write(table.concat(lines, "\n") .. "\n"); f:close() end
 
-		local fzf_cmd = "fzf"
-			.. " --with-nth 2.."
-			.. " --border rounded"
-			.. ' --border-label "  Projects  "'
-			.. " --layout reverse"
-			.. ' --prompt "  project › "'
-			.. ' --pointer "›"'
-			.. " --no-info"
-			.. " --padding 1,2"
-			.. ' --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
-			.. " < " .. tmpfile
-		local cmd = "selection=$(" .. fzf_cmd .. ")"
-			.. " && echo \"$selection\" > " .. result_file
+		local cmd = 'selection=$('
+			.. fzf.cmd({ label = "Projects", prompt = "project", with_nth = "2.." })
+			.. " < " .. tmpfile .. ")"
+			.. ' && echo "$selection" > ' .. result_file
 			.. "; exit 0"
 
-		local _, _, new_win = wezterm.mux.spawn_window({
-			args = { "/bin/zsh", "-l", "-c", cmd },
-		})
-		if new_win then
-			local ok, gui_win = pcall(function() return new_win:gui_window() end)
-			if ok and gui_win then gui_win:set_inner_size(750, 400) end
-		end
+		fzf.spawn({ "/bin/zsh", "-l", "-c", cmd }, 750, 400)
 
-		-- Poll for fzf result (window and pane captured as upvalues)
-		local poll_count = 0
-		local function check_result()
-			poll_count = poll_count + 1
-			if poll_count > 300 then return end  -- 60s timeout
-
-			local rf = io.open(result_file, "r")
-			if not rf then
-				wezterm.time.call_after(0.2, check_result)
-				return
-			end
-
-			local line = rf:read("*line")
-			rf:close()
-			os.remove(result_file)
-			if not line or line == "" then return end
-
+		fzf.poll(result_file, function(content)
+			local line = content:match("^([^\n]+)") or ""
+			if line == "" then return end
 			local id = line:match("^(%S+)")
 			if not id then return end
 
-			-- "New session…" — prompt for a name, then create it
 			if id == "__new__" then
 				window:perform_action(
 					wezterm.action.PromptInputLine({
@@ -155,7 +113,6 @@ M.choose_project = function(opts)
 				return
 			end
 
-			-- Project directory selected — id is the full path
 			local project_name = id:match("([^/]+)$")
 			local c = "zellij list-sessions --no-formatting 2>/dev/null"
 				.. " | awk '{print $1}' | grep -qx '" .. project_name .. "'"
@@ -163,7 +120,6 @@ M.choose_project = function(opts)
 				.. " || zellij -s '" .. project_name .. "' -n dev"
 
 			if opts.new_window then
-				-- Spawn a fresh WezTerm window in the project workspace
 				wezterm.mux.spawn_window({
 					workspace = project_name,
 					cwd = id,
@@ -174,7 +130,6 @@ M.choose_project = function(opts)
 				return
 			end
 
-			-- Switch current window to the project workspace
 			local workspace_exists = false
 			for _, name in ipairs(wezterm.mux.get_workspace_names()) do
 				if name == project_name then workspace_exists = true; break end
@@ -199,8 +154,7 @@ M.choose_project = function(opts)
 				)
 			end
 			set_workspace_backdrop(window, project_name)
-		end
-		wezterm.time.call_after(0.2, check_result)
+		end)
 	end)
 end
 
@@ -228,6 +182,11 @@ M.new_worktree_session = function()
 		local result_file = "/tmp/wezterm-worktree-result-" .. ts
 		local script_file = "/tmp/wezterm-worktree-" .. ts .. ".zsh"
 
+		-- fzf --bind args for local/remote branch toggle
+		local branch_binds = "--bind 'ctrl-r:reload(git -C \"$project_dir\" branch -r --format=\"%(refname:short)\" 2>/dev/null | sed \"s|^origin/||\" | grep -v \"^HEAD\" | sort)+change-header(  [remote]  ctrl-l: local branches)'"
+			.. " --bind 'ctrl-l:reload(git -C \"$project_dir\" branch --format=\"%(refname:short)\" 2>/dev/null | grep -v \"^$\" | sort)+change-header(  [local]  ctrl-r: remote branches)'"
+			.. " --print-query"
+
 		local script_lines = {
 			"#!/bin/zsh",
 			'export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"',
@@ -238,27 +197,23 @@ M.new_worktree_session = function()
 			'projects=$(find "$code_dir" -maxdepth 3 -name ".git" -type d 2>/dev/null \\',
 			'    | sed "s|/.git$||" | sed "s|^$code_dir/||" | sort)',
 			'[ -z "$projects" ] && exit 1',
-			'project=$(echo "$projects" | fzf \\',
-			'    --border rounded --layout reverse --pointer "›" \\',
-			'    --border-label "  New Worktree — Project  " --prompt "  project › " \\',
-			'    --no-info --padding 1,2 \\',
-			'    --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
-				.. (current_project ~= "" and (' \\\n    --query "' .. current_project .. '"') or "")
+			'project=$(echo "$projects" | '
+				.. fzf.cmd({ label = "New Worktree — Project", prompt = "project" })
+				.. (current_project ~= "" and (' --query "' .. current_project .. '"') or "")
 				.. ")",
 			'[ -z "$project" ] && exit 0',
 			'export project_dir="$code_dir/$project"',
 			"",
 			"# Step 2: pick existing branch or type a new name",
 			'branches=$(git -C "$project_dir" branch --format="%(refname:short)" 2>/dev/null | grep -v "^$" | sort)',
-			'fzf_out=$(echo "$branches" | fzf \\',
-			'    --border rounded --layout reverse --pointer "›" \\',
-			'    --border-label "  New Worktree — Branch  " --prompt "  branch › " \\',
-			'    --header "  [local]  ctrl-r: remote branches" \\',
-			'    --no-info --padding 1,2 \\',
-			'    --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0" \\',
-			"    --bind 'ctrl-r:reload(git -C \"$project_dir\" branch -r --format=\"%(refname:short)\" 2>/dev/null | sed \"s|^origin/||\" | grep -v \"^HEAD\" | sort)+change-header(  [remote]  ctrl-l: local branches)' \\",
-			"    --bind 'ctrl-l:reload(git -C \"$project_dir\" branch --format=\"%(refname:short)\" 2>/dev/null | grep -v \"^$\" | sort)+change-header(  [local]  ctrl-r: remote branches)' \\",
-			'    --print-query)',
+			'fzf_out=$(echo "$branches" | '
+				.. fzf.cmd({
+					label  = "New Worktree — Branch",
+					prompt = "branch",
+					header = "[local]  ctrl-r: remote branches",
+					extra  = branch_binds,
+				})
+				.. ")",
 			'query=$(echo "$fzf_out" | head -1)',
 			'selection=$(echo "$fzf_out" | sed -n "2p")',
 			'branch="${selection:-$query}"',
@@ -288,28 +243,11 @@ M.new_worktree_session = function()
 		local sf = io.open(script_file, "w")
 		if sf then sf:write(table.concat(script_lines, "\n") .. "\n"); sf:close() end
 
-		local _, _, new_win = wezterm.mux.spawn_window({
-			args = { "/bin/zsh", "-l", script_file },
-		})
-		if new_win then
-			local ok, gui_win = pcall(function() return new_win:gui_window() end)
-			if ok and gui_win then gui_win:set_inner_size(750, 400) end
-		end
+		fzf.spawn({ "/bin/zsh", "-l", script_file }, 750, 400)
 
-		local poll_count = 0
-		local function check_result()
-			poll_count = poll_count + 1
-			if poll_count > 300 then os.remove(script_file); return end
-
-			local rf = io.open(result_file, "r")
-			if not rf then wezterm.time.call_after(0.2, check_result); return end
-
-			local line = rf:read("*line")
-			rf:close()
-			os.remove(result_file)
-			os.remove(script_file)
-			if not line or line == "" then return end
-
+		fzf.poll(result_file, function(content)
+			local line = content:match("^([^\n]+)") or ""
+			if line == "" then return end
 			local proj, branch, worktree_dir = line:match("^([^|]+)|([^|]+)|(.+)$")
 			if not proj then return end
 
@@ -335,21 +273,18 @@ M.new_worktree_session = function()
 					pane
 				)
 			end
-		end
-		wezterm.time.call_after(0.2, check_result)
+		end, { script_file })
 	end)
 end
 
--- Get active zellij session names
+-- Get active zellij session names (excludes dead/exited sessions)
 local function zellij_sessions()
 	local sessions = {}
 	local handle = io.popen('/bin/zsh -l -c "zellij list-sessions --no-formatting 2>/dev/null"')
 	if handle then
 		for line in handle:lines() do
 			local name = line:match("^(%S+)")
-			-- Skip dead sessions — they appear as "name [EXITED - ...]"
-			local is_dead = line:match("%[EXITED")
-			if name and not is_dead then
+			if name and not line:match("%[EXITED") then
 				table.insert(sessions, name)
 			end
 		end
@@ -363,7 +298,7 @@ M.choose_session = function()
 		local lines = {}
 		local seen = {}
 
-		-- Active WezTerm workspaces first (skip claude-* — those belong to the Claude picker)
+		-- Active WezTerm workspaces (skip claude-* — managed via Cmd+Ctrl+E)
 		for _, name in ipairs(wezterm.mux.get_workspace_names()) do
 			seen[name] = true
 			if not name:match("^claude%-") then
@@ -371,8 +306,7 @@ M.choose_session = function()
 			end
 		end
 
-		-- Zellij-only sessions (no WezTerm workspace yet)
-		-- Skip claude- sessions — managed via the Claude picker (Cmd+Ctrl+E)
+		-- Zellij-only sessions not yet attached to a WezTerm workspace
 		for _, name in ipairs(zellij_sessions()) do
 			if not seen[name] and not name:match("^claude%-") then
 				seen[name] = true
@@ -386,70 +320,35 @@ M.choose_session = function()
 		local result_file = "/tmp/wezterm-session-result-" .. tostring(os.time())
 
 		local f = io.open(tmpfile, "w")
-		if f then
-			f:write(table.concat(lines, "\n") .. "\n")
-			f:close()
-		end
+		if f then f:write(table.concat(lines, "\n") .. "\n"); f:close() end
 
-		local fzf_cmd = "fzf"
-			.. " --with-nth 2.."
-			.. " --border rounded"
-			.. ' --border-label "  Sessions  "'
-			.. " --layout reverse"
-			.. ' --prompt "  workspace › "'
-			.. ' --pointer "›"'
-			.. " --no-info"
-			.. " --padding 1,2"
-			.. ' --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
-			.. ' --expect "ctrl-d,ctrl-n"'
-			.. ' --header "  ctrl-n: new worktree  ctrl-d: delete session"'
-			.. " < " .. tmpfile
-		-- --expect outputs the key on line 1, selection on line 2
-		local cmd = "result=$(" .. fzf_cmd .. ")"
+		local cmd = 'result=$('
+			.. fzf.cmd({
+				label    = "Sessions",
+				prompt   = "workspace",
+				with_nth = "2..",
+				header   = "ctrl-n: new worktree  ctrl-d: delete session",
+				expect   = "ctrl-d,ctrl-n",
+			})
+			.. " < " .. tmpfile .. ")"
 			.. " && printf '%s\\n' \"$result\" > " .. result_file
 			.. "; exit 0"
 
-		local _, _, new_win = wezterm.mux.spawn_window({
-			args = { "/bin/zsh", "-l", "-c", cmd },
-		})
-		if new_win then
-			local ok, gui_win = pcall(function() return new_win:gui_window() end)
-			if ok and gui_win then gui_win:set_inner_size(750, 300) end
-		end
+		fzf.spawn({ "/bin/zsh", "-l", "-c", cmd }, 750, 300)
 
-		-- Poll for fzf result (window and pane captured as upvalues)
-		local poll_count = 0
-		local function check_result()
-			poll_count = poll_count + 1
-			if poll_count > 300 then return end  -- 60s timeout
-
-			local rf = io.open(result_file, "r")
-			if not rf then
-				wezterm.time.call_after(0.2, check_result)
-				return
-			end
-
-			local content = rf:read("*all")
-			rf:close()
-			os.remove(result_file)
-			if not content or content == "" then return end
-
-			-- --expect: line 1 = key pressed ("ctrl-d" or ""), line 2 = selection
+		-- --expect outputs key on line 1, selection on line 2
+		fzf.poll(result_file, function(content)
 			local pressed_key = content:match("^([^\n]*)\n") or ""
-			local line = content:match("^[^\n]*\n([^\n]+)") or ""
-
-			if not line or line == "" then return end
-
+			local line        = content:match("^[^\n]*\n([^\n]+)") or ""
+			if line == "" then return end
 			local id = line:match("^(%S+)")
 			if not id then return end
 
-			-- ctrl-n: launch new worktree session picker
 			if pressed_key == "ctrl-n" then
 				window:perform_action(M.new_worktree_session(), pane)
 				return
 			end
 
-			-- ctrl-d: delete the session
 			if pressed_key == "ctrl-d" then
 				local kind, name = id:match("^(%a+):(.+)$")
 				if kind == "zellij" then
@@ -457,9 +356,9 @@ M.choose_session = function()
 						'zellij delete-session "' .. name .. '" 2>/dev/null'
 					}
 				end
-				-- WezTerm workspaces close naturally when their windows close
 				return
 			end
+
 			local kind, name = id:match("^(%a+):(.+)$")
 			if not kind then return end
 
@@ -478,8 +377,7 @@ M.choose_session = function()
 				)
 			end
 			set_workspace_backdrop(window, name)
-		end
-		wezterm.time.call_after(0.2, check_result)
+		end)
 	end)
 end
 

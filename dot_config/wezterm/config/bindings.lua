@@ -2,6 +2,7 @@ local wezterm = require('wezterm')
 local platform = require('utils.platform')
 local backdrops = require('utils.backdrops')
 local projects = require('utils.projects')
+local fzf = require('utils.fzf')
 local workspace_history = require('utils.workspace-history')
 local act = wezterm.action
 
@@ -67,16 +68,6 @@ local keys = {
             local session = window:active_workspace()
             local lines = {}
 
-            local fzf_base = 'fzf'
-                .. ' --border rounded'
-                .. ' --border-label "  Sessions  "'
-                .. ' --layout reverse'
-                .. ' --prompt "  session › "'
-                .. ' --pointer "›"'
-                .. ' --no-info'
-                .. ' --padding 1,2'
-                .. ' --color "border:#5e81ac,label:#88c0d0,prompt:#88c0d0,pointer:#88c0d0"'
-
             if in_zellij then
                 local handle = io.popen(
                     '/bin/zsh -l -c \'ZELLIJ_SESSION_NAME="' .. session
@@ -106,12 +97,10 @@ local keys = {
                 f:close()
             end
 
-            local cmd, spawn_env
+            local cmd
             if in_zellij then
                 local zs = 'ZELLIJ_SESSION_NAME="' .. session .. '"'
-                cmd = fzf_base
-                    .. ' --expect "ctrl-d"'
-                    .. ' --header "  ctrl-d: close tab + remove worktree"'
+                cmd = fzf.cmd({ label = 'Sessions', prompt = 'session', expect = 'ctrl-d', header = 'ctrl-d: close tab + remove worktree' })
                     .. ' < ' .. tmpfile
                     .. ' | { '
                     .. 'IFS= read -r key; IFS= read -r tab; '
@@ -133,22 +122,11 @@ local keys = {
                     ..   zs .. ' zellij action go-to-tab-name "$tab"; '
                     .. 'fi; }'
                     .. '; exit 0'
-                spawn_env = {}
             else
-                cmd = fzf_base .. ' < ' .. tmpfile .. '; exit 0'
-                spawn_env = { WEZTERM_PANE = tostring(pane:pane_id()) }
+                cmd = fzf.cmd({ label = 'Sessions', prompt = 'session' }) .. ' < ' .. tmpfile .. '; exit 0'
             end
 
-            local _, _, new_win = wezterm.mux.spawn_window({
-                args = { '/bin/zsh', '-l', '-c', cmd },
-                set_environment_variables = spawn_env,
-            })
-            if new_win then
-                local ok, gui_win = pcall(function() return new_win:gui_window() end)
-                if ok and gui_win then
-                    gui_win:set_inner_size(750, 300)
-                end
-            end
+            fzf.spawn({ '/bin/zsh', '-l', '-c', cmd }, 750, 300)
         end),
     },
     { key = 'w',          mods = mod.SUPER_REV, action = act.CloseCurrentTab({ confirm = false }) },
