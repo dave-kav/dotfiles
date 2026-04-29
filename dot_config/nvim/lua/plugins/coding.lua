@@ -8,6 +8,7 @@ return {
     dependencies = {
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
+      "nvim-neotest/nvim-nio",
     },
     keys = {
       {
@@ -205,6 +206,19 @@ return {
     "eandrju/cellular-automaton.nvim",
     cmd = "CellularAutomaton",
     -- keymap is in keymaps.lua
+  },
+
+  -- ============================================================
+  -- Toggle values under cursor (true/false, yes/no, etc.)
+  -- ============================================================
+  {
+    "nguyenvukhang/nvim-toggler",
+    keys = {
+      { "<leader>i", function() require("nvim-toggler").toggle() end, desc = "Toggle value" },
+    },
+    opts = {
+      remove_default_keybinds = true,
+    },
   },
 
 }
