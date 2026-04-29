@@ -255,11 +255,18 @@ local keys = {
         end),
     },
 
-    -- panes: navigation
+    -- panes: navigation (WezTerm-native, for when not in Zellij)
     { key = 'k',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Up') },
     { key = 'j',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Down') },
     { key = 'h',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Left') },
     { key = 'l',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Right') },
+    -- Cmd+Opt+hjkl: send Alt+hjkl through to Zellij/nvim smart-splits.
+    -- Needed because left Option is set to compose characters (for # etc.),
+    -- so bare Option+hjkl no longer reaches the terminal as Alt sequences.
+    { key = 'h', mods = 'SUPER|ALT', action = act.SendKey { key = 'h', mods = 'ALT' } },
+    { key = 'j', mods = 'SUPER|ALT', action = act.SendKey { key = 'j', mods = 'ALT' } },
+    { key = 'k', mods = 'SUPER|ALT', action = act.SendKey { key = 'k', mods = 'ALT' } },
+    { key = 'l', mods = 'SUPER|ALT', action = act.SendKey { key = 'l', mods = 'ALT' } },
     {
         key = 'p',
         mods = mod.SUPER_REV,

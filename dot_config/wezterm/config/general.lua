@@ -1,9 +1,9 @@
 return {
    -- behaviours
    automatically_reload_config = true,
-   -- Treat Option as Alt (modifier) rather than compose key on macOS.
-   -- Without this, Option+E sends ´ instead of triggering Alt+E keybindings.
-   send_composed_key_when_left_alt_is_pressed = false,
+   -- Left Option composes characters (Option+3 = #, Option+2 = €, etc.)
+   -- Right Option acts as Alt/Meta for Zellij pane movement (Alt+h/j/k/l)
+   send_composed_key_when_left_alt_is_pressed = true,
    send_composed_key_when_right_alt_is_pressed = false,
    exit_behavior = 'CloseOnCleanExit', -- if the shell program exited with a successful status
    exit_behavior_messaging = 'Verbose',
