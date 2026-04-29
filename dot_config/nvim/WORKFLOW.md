@@ -39,7 +39,8 @@ WezTerm  (terminal window + workspaces + backdrops)
 | `Cmd+Ctrl+\` | Split horizontally (Zellij: new pane right) |
 | `Cmd+Enter` | Zoom/maximise pane (Zellij: `Alt+m`) |
 | `Cmd+W` | Close pane (Zellij: close-pane) |
-| `Cmd+Ctrl+H/J/K/L` | Navigate panes |
+| `Cmd+Ctrl+H/J/K/L` | Navigate panes (WezTerm-native, when not in Zellij) |
+| `Option+H/J/K/L` | Navigate panes (works across Zellij panes and nvim splits) |
 
 ### Backgrounds
 | Key | Action |
