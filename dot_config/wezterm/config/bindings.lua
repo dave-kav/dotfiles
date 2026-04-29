@@ -260,13 +260,13 @@ local keys = {
     { key = 'j',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Down') },
     { key = 'h',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Left') },
     { key = 'l',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Right') },
-    -- Cmd+Opt+hjkl: send Alt+hjkl through to Zellij/nvim smart-splits.
-    -- Needed because left Option is set to compose characters (for # etc.),
-    -- so bare Option+hjkl no longer reaches the terminal as Alt sequences.
-    { key = 'h', mods = 'SUPER|ALT', action = act.SendKey { key = 'h', mods = 'ALT' } },
-    { key = 'j', mods = 'SUPER|ALT', action = act.SendKey { key = 'j', mods = 'ALT' } },
-    { key = 'k', mods = 'SUPER|ALT', action = act.SendKey { key = 'k', mods = 'ALT' } },
-    { key = 'l', mods = 'SUPER|ALT', action = act.SendKey { key = 'l', mods = 'ALT' } },
+    -- Opt+hjkl: explicitly send Alt sequences to Zellij/nvim smart-splits.
+    -- Explicit bindings take precedence over compose, so only these 4 keys
+    -- bypass compose — everything else (Option+3 = #, etc.) still works.
+    { key = 'h', mods = 'OPT', action = act.SendKey { key = 'h', mods = 'ALT' } },
+    { key = 'j', mods = 'OPT', action = act.SendKey { key = 'j', mods = 'ALT' } },
+    { key = 'k', mods = 'OPT', action = act.SendKey { key = 'k', mods = 'ALT' } },
+    { key = 'l', mods = 'OPT', action = act.SendKey { key = 'l', mods = 'ALT' } },
     {
         key = 'p',
         mods = mod.SUPER_REV,
