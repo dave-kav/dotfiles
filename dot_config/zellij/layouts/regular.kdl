@@ -1,4 +1,4 @@
-// Claude layout: single claude session pane, same status bar as dev
+// Regular layout: single terminal pane, same status bar as dev
 layout {
     default_tab_template {
         children
@@ -31,9 +31,7 @@ layout {
         }
     }
 
-    tab name="claude" focus=true {
-        pane command="/bin/zsh" {
-            args "-l" "-c" "export ZELLIJ_CLAUDE_TAB=1; claude; ZELLIJ_CLAUDE_TAB=1 exec zsh -l"
-        }
+    tab name="terminal" focus=true {
+        pane
     }
 }

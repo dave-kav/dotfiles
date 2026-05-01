@@ -168,7 +168,7 @@ M.new_worktree_session = function()
 		local session = window:active_workspace()
 		local home = wezterm.home_dir
 		local code_dir = home .. "/code"
-		local dev_layout = home .. "/.config/zellij/layouts/dev.kdl"
+		local layouts_dir = home .. "/.config/zellij/layouts"
 
 		local cwd_uri = pane:get_current_working_dir()
 		local cwd = (cwd_uri and cwd_uri.file_path) or home
@@ -237,7 +237,13 @@ M.new_worktree_session = function()
 			'    fi',
 			'fi',
 			"",
-			'printf "%s|%s|%s\\n" "$project" "$branch" "$worktree_dir" > "$result_file"',
+			"",
+		"# Step 3: choose layout",
+		'layout=$(printf "dev      nvim + terminal + claude\\nregular  terminal\\nclaude   claude session" | '
+			.. fzf.cmd({ label = "Layout", prompt = "layout", extra = "--no-sort" })
+			.. " | awk '{print $1}')",
+		'[ -z "$layout" ] && exit 0',
+		'printf "%s|%s|%s|%s\\n" "$project" "$branch" "$worktree_dir" "$layout" > "$result_file"',
 		}
 
 		local sf = io.open(script_file, "w")
@@ -248,8 +254,9 @@ M.new_worktree_session = function()
 		fzf.poll(result_file, function(content)
 			local line = content:match("^([^\n]+)") or ""
 			if line == "" then return end
-			local proj, branch, worktree_dir = line:match("^([^|]+)|([^|]+)|(.+)$")
+			local proj, branch, worktree_dir, layout = line:match("^([^|]+)|([^|]+)|([^|]+)|(.+)$")
 			if not proj then return end
+			local layout_file = layouts_dir .. "/" .. (layout or "dev") .. ".kdl"
 
 			local tab_name = proj .. "/" .. branch
 
@@ -257,7 +264,7 @@ M.new_worktree_session = function()
 				wezterm.run_child_process { "/bin/zsh", "-l", "-c",
 					'ZELLIJ_SESSION_NAME="' .. session .. '"'
 					.. " zellij action new-tab"
-					.. ' --layout "' .. dev_layout .. '"'
+					.. ' --layout "' .. layout_file .. '"'
 					.. ' --name "' .. tab_name .. '"'
 					.. ' --cwd "' .. worktree_dir .. '"'
 				}
