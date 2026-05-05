@@ -16,11 +16,12 @@ if platform.is_win then
         { label = 'Git Bash', args = { 'git-bash.exe' } },
     }
 elseif platform.is_mac then
-    options.default_prog = { '/bin/zsh', '-l' }
+    options.default_prog = { '/opt/homebrew/bin/fish', '-l' }
     options.launch_menu = {
+        { label = 'Fish',    args = { '/opt/homebrew/bin/fish', '-l' } },
+        { label = 'Zsh',     args = { '/bin/zsh', '-l' } },
         { label = 'Bash',    args = { 'bash', '-l' } },
         { label = 'Nushell', args = { '/opt/homebrew/bin/nu', '-l' } },
-        { label = 'Zsh',     args = { 'zsh', '-l' } },
     }
 elseif platform.is_linux then
     options.default_prog = { 'zsh', '-l' }

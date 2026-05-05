@@ -32,8 +32,8 @@ layout {
     }
 
     tab name="claude" focus=true {
-        pane command="/bin/zsh" {
-            args "-l" "-c" "export ZELLIJ_CLAUDE_TAB=1; claude; ZELLIJ_CLAUDE_TAB=1 exec zsh -l"
+        pane command="/opt/homebrew/bin/fish" {
+            args "-l" "-c" "set -x ZELLIJ_CLAUDE_TAB 1; claude; set -x ZELLIJ_CLAUDE_TAB 1; exec fish -l"
         }
     }
 }
