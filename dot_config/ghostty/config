@@ -51,6 +51,7 @@ window-padding-y = 10,8
 confirm-close-surface = false
 macos-option-as-alt = true
 scrollback-limit = 99999
+command = /opt/homebrew/bin/fish
 
 # ── Keybindings ───────────────────────────────────────────────────────────────
 # Mirrors WezTerm bindings as closely as Ghostty allows.
